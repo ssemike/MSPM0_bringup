@@ -1,8 +1,8 @@
  #include "ti_msp_dl_config.h"
- #include "uart.h"
+ #include "HAL/uart.h"
  #include <stdlib.h>
  #include <string.h>
- #include "i2c.h"
+ #include "HAL/i2c.h"
 #include "ics/BQ25628/BQ25628_functions.h"
 extern volatile bool bq_monitor_active; 
 void cmd_pwr(char *args) {

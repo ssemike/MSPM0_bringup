@@ -1,6 +1,6 @@
 # FIXED
 
-main.o: ../main.c \
+HAL/uart.o: ../HAL/uart.c \
  ti_msp_dl_config.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/msp.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/DeviceFamily.h \
@@ -84,8 +84,7 @@ main.o: ../main.c \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_wwdt.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_interrupt.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_systick.h \
- ../HAL/i2c.h ../functions.h ../HAL/uart.h \
- ../ics/BQ25628/BQ25628_functions.h
+ ../HAL/uart.h
 ti_msp_dl_config.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/msp.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/DeviceFamily.h:
@@ -169,7 +168,4 @@ C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_vref.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_wwdt.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_interrupt.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_systick.h:
-../HAL/i2c.h:
-../functions.h:
 ../HAL/uart.h:
-../ics/BQ25628/BQ25628_functions.h:

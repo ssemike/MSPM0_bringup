@@ -1,5 +1,5 @@
 #include "BQ25628_functions.h"
-#include "i2c.h"
+#include "HAL/i2c.h"
 #include <stdbool.h>
 
 /* Internal Telemetry Cache */

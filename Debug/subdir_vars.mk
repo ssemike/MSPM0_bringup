@@ -10,11 +10,9 @@ SYSCFG_SRCS += \
 
 C_SRCS += \
 ./ti_msp_dl_config.c \
-C:/ti/mspm0_sdk_2_08_00_03/source/ti/devices/msp/m0p/startup_system_files/ticlang/startup_mspm0g350x_ticlang.c \
+C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/m0p/startup_system_files/ticlang/startup_mspm0g350x_ticlang.c \
 ../functions.c \
-../i2c.c \
-../main.c \
-../uart.c 
+../main.c 
 
 GEN_CMDS += \
 ./device_linker.cmd 
@@ -28,9 +26,7 @@ C_DEPS += \
 ./ti_msp_dl_config.d \
 ./startup_mspm0g350x_ticlang.d \
 ./functions.d \
-./i2c.d \
-./main.d \
-./uart.d 
+./main.d 
 
 GEN_OPTS += \
 ./device.opt 
@@ -39,9 +35,7 @@ OBJS += \
 ./ti_msp_dl_config.o \
 ./startup_mspm0g350x_ticlang.o \
 ./functions.o \
-./i2c.o \
-./main.o \
-./uart.o 
+./main.o 
 
 GEN_MISC_FILES += \
 ./device.cmd.genlibs \
@@ -52,9 +46,7 @@ OBJS__QUOTED += \
 "ti_msp_dl_config.o" \
 "startup_mspm0g350x_ticlang.o" \
 "functions.o" \
-"i2c.o" \
-"main.o" \
-"uart.o" 
+"main.o" 
 
 GEN_MISC_FILES__QUOTED += \
 "device.cmd.genlibs" \
@@ -65,9 +57,7 @@ C_DEPS__QUOTED += \
 "ti_msp_dl_config.d" \
 "startup_mspm0g350x_ticlang.d" \
 "functions.d" \
-"i2c.d" \
-"main.d" \
-"uart.d" 
+"main.d" 
 
 GEN_FILES__QUOTED += \
 "device_linker.cmd" \
@@ -79,10 +69,8 @@ SYSCFG_SRCS__QUOTED += \
 
 C_SRCS__QUOTED += \
 "./ti_msp_dl_config.c" \
-"C:/ti/mspm0_sdk_2_08_00_03/source/ti/devices/msp/m0p/startup_system_files/ticlang/startup_mspm0g350x_ticlang.c" \
+"C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/m0p/startup_system_files/ticlang/startup_mspm0g350x_ticlang.c" \
 "../functions.c" \
-"../i2c.c" \
-"../main.c" \
-"../uart.c" 
+"../main.c" 
 
 

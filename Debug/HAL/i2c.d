@@ -1,7 +1,8 @@
 # FIXED
 
-main.o: ../main.c \
- ti_msp_dl_config.h \
+HAL/i2c.o: ../HAL/i2c.c \
+ C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/hw_i2c.h \
+ C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_i2c.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/msp.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/DeviceFamily.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/m0p/mspm0g350x.h \
@@ -15,7 +16,6 @@ main.o: ../main.c \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/hw_flashctl.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/hw_gpio.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/hw_gptimer.h \
- C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/hw_i2c.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/hw_iomux.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/hw_mathacl.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/hw_mcan.h \
@@ -32,9 +32,10 @@ main.o: ../main.c \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/m0p/hw_debugss.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/m0p/hw_sysctl.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/m0p/sysctl/hw_sysctl_mspm0g1x0x_g3x0x.h \
+ C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_common.h \
+ ti_msp_dl_config.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/driverlib.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_adc12.h \
- C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_common.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_factoryregion.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_core.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_aes.h \
@@ -49,7 +50,6 @@ main.o: ../main.c \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/sysctl/dl_sysctl_mspm0g1x0x_g3x0x.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_gpamp.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_gpio.h \
- C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_i2c.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_i2s.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_iwdt.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_lfss.h \
@@ -84,9 +84,9 @@ main.o: ../main.c \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_wwdt.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_interrupt.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_systick.h \
- ../HAL/i2c.h ../functions.h ../HAL/uart.h \
- ../ics/BQ25628/BQ25628_functions.h
-ti_msp_dl_config.h:
+ ../HAL/i2c.h
+C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/hw_i2c.h:
+C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_i2c.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/msp.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/DeviceFamily.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/m0p/mspm0g350x.h:
@@ -100,7 +100,6 @@ C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/hw_dma.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/hw_flashctl.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/hw_gpio.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/hw_gptimer.h:
-C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/hw_i2c.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/hw_iomux.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/hw_mathacl.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/hw_mcan.h:
@@ -117,9 +116,10 @@ C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/m0p/hw_cpuss.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/m0p/hw_debugss.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/m0p/hw_sysctl.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/peripherals/m0p/sysctl/hw_sysctl_mspm0g1x0x_g3x0x.h:
+C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_common.h:
+ti_msp_dl_config.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/driverlib.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_adc12.h:
-C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_common.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_factoryregion.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_core.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_aes.h:
@@ -134,7 +134,6 @@ C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_sysctl.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/sysctl/dl_sysctl_mspm0g1x0x_g3x0x.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_gpamp.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_gpio.h:
-C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_i2c.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_i2s.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_iwdt.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_lfss.h:
@@ -170,6 +169,3 @@ C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_wwdt.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_interrupt.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_systick.h:
 ../HAL/i2c.h:
-../functions.h:
-../HAL/uart.h:
-../ics/BQ25628/BQ25628_functions.h:

@@ -1,8 +1,8 @@
 
 #include "ti_msp_dl_config.h"
-#include "uart.h"
+#include "HAL/i2c.h"
 #include "functions.h"
-#include "i2c.h"
+#include "HAL/uart.h"
 #include "ics/BQ25628/BQ25628_functions.h"
 
 volatile bool bq_monitor_active = false;
