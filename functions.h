@@ -24,4 +24,6 @@ void cmd_hall(char *args);
 
 void cmd_bq(char *args);
 
+void cmd_spi(char *args);
+
 #endif /* FUNCTIONS_H_ */

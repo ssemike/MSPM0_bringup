@@ -3,6 +3,8 @@
 "./functions.o"
 "./main.o"
 "./HAL/i2c.o"
+"./HAL/spi_master.o"
+"./HAL/spi_slave.o"
 "./HAL/uart.o"
 "./ics/BQ25628/BQ25628_functions.o"
 "./ics/BQ27Z7/BQ27Z7_functions.o"

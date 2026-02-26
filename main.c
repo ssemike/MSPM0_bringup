@@ -4,11 +4,13 @@
 #include "functions.h"
 #include "HAL/uart.h"
 #include "ics/BQ25628/BQ25628_functions.h"
+#include "HAL/spi_slave.h"
 
 volatile bool bq_monitor_active = false;
 volatile bool hall_monitor_active = false;
 volatile uint32_t hall_monitor_rate = 200; 
 volatile uint32_t hall_monitor_counter = 0;
+
 
 void setupCLI(void) {
     CLI_RegisterCommand("help", cmd_help, "Show available commands");
@@ -16,6 +18,7 @@ void setupCLI(void) {
     CLI_RegisterCommand("i2cscan", cmd_i2cscan, "Scan I2C bus: i2cscan <0|1>");
     CLI_RegisterCommand("hall", cmd_hall, "Hall sensor: hall <pwr|status>");
     CLI_RegisterCommand("bq", cmd_bq, "BQ25628E charger control - type bq for full help");
+    CLI_RegisterCommand("spi", cmd_spi, "SPI Slave: init, tx_view, tx_write, monitor");
 }
 
 
@@ -25,6 +28,8 @@ int main(void)
     uart_init();  
     setupCLI();  
     i2c_init();
+    SPI_Peripheral_Init(&stm32Spi, SPI_1_INST, DMA_CH0_CHAN_ID, DMA_CH1_CHAN_ID, gSPI_TxPacket, gSPI_RxPacket, SPI_PACKET_SIZE);
+    SPI_Peripheral_Arm(&stm32Spi);
     char processingBuffer[MAX_INPUT_LEN];
 
     while (1) {

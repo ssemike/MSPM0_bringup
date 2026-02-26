@@ -85,7 +85,7 @@ main.o: ../main.c \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_interrupt.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_systick.h \
  ../HAL/i2c.h ../functions.h ../HAL/uart.h \
- ../ics/BQ25628/BQ25628_functions.h
+ ../ics/BQ25628/BQ25628_functions.h ../HAL/spi_slave.h
 ti_msp_dl_config.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/msp.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/DeviceFamily.h:
@@ -173,3 +173,4 @@ C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_systick.h:
 ../functions.h:
 ../HAL/uart.h:
 ../ics/BQ25628/BQ25628_functions.h:
+../HAL/spi_slave.h:

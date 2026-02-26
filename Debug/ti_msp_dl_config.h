@@ -200,6 +200,20 @@ extern "C" {
 
 
 
+/* Defines for DMA_CH3 */
+#define DMA_CH3_CHAN_ID                                                      (3)
+#define SPI_0_INST_DMA_TRIGGER_0                              (DMA_SPI0_RX_TRIG)
+/* Defines for DMA_CH2 */
+#define DMA_CH2_CHAN_ID                                                      (2)
+#define SPI_0_INST_DMA_TRIGGER_1                              (DMA_SPI0_TX_TRIG)
+/* Defines for DMA_CH1 */
+#define DMA_CH1_CHAN_ID                                                      (1)
+#define SPI_1_INST_DMA_TRIGGER_0                              (DMA_SPI1_RX_TRIG)
+/* Defines for DMA_CH0 */
+#define DMA_CH0_CHAN_ID                                                      (0)
+#define SPI_1_INST_DMA_TRIGGER_1                              (DMA_SPI1_TX_TRIG)
+
+
 /* Defines for PIR_TRIGGER: GPIOA.17 with pinCMx 39 on package pin 10 */
 #define EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT                              (GPIOA)
 #define EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN                      (DL_GPIO_PIN_17)
@@ -295,6 +309,7 @@ void SYSCFG_DL_UART_0_init(void);
 void SYSCFG_DL_MCU_UART_1_init(void);
 void SYSCFG_DL_SPI_0_init(void);
 void SYSCFG_DL_SPI_1_init(void);
+void SYSCFG_DL_DMA_init(void);
 
 
 bool SYSCFG_DL_saveConfiguration(void);

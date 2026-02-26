@@ -60,6 +60,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_init(void)
     SYSCFG_DL_MCU_UART_1_init();
     SYSCFG_DL_SPI_0_init();
     SYSCFG_DL_SPI_1_init();
+    SYSCFG_DL_DMA_init();
     /* Ensure backup structures have no valid state */
 
 
@@ -104,6 +105,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_initPower(void)
     DL_SPI_reset(SPI_0_INST);
     DL_SPI_reset(SPI_1_INST);
 
+
     DL_GPIO_enablePower(GPIOA);
     DL_GPIO_enablePower(GPIOB);
     DL_TimerG_enablePower(TIMER_0_INST);
@@ -113,30 +115,33 @@ SYSCONFIG_WEAK void SYSCFG_DL_initPower(void)
     DL_UART_Main_enablePower(MCU_UART_1_INST);
     DL_SPI_enablePower(SPI_0_INST);
     DL_SPI_enablePower(SPI_1_INST);
+
     delay_cycles(POWER_STARTUP_DELAY);
 }
 
 SYSCONFIG_WEAK void SYSCFG_DL_GPIO_init(void)
 {
 
-    DL_GPIO_initPeripheralInputFunctionFeatures(GPIO_I2C_0_IOMUX_SDA,
-        GPIO_I2C_0_IOMUX_SDA_FUNC, DL_GPIO_INVERSION_DISABLE,
-        DL_GPIO_RESISTOR_NONE, DL_GPIO_HYSTERESIS_DISABLE,
-        DL_GPIO_WAKEUP_DISABLE);
-    DL_GPIO_initPeripheralInputFunctionFeatures(GPIO_I2C_0_IOMUX_SCL,
-        GPIO_I2C_0_IOMUX_SCL_FUNC, DL_GPIO_INVERSION_DISABLE,
-        DL_GPIO_RESISTOR_NONE, DL_GPIO_HYSTERESIS_DISABLE,
-        DL_GPIO_WAKEUP_DISABLE);
+    
+	DL_GPIO_initPeripheralInputFunctionFeatures(
+		 GPIO_I2C_0_IOMUX_SDA, GPIO_I2C_0_IOMUX_SDA_FUNC,
+		 DL_GPIO_INVERSION_DISABLE, DL_GPIO_RESISTOR_PULL_UP,
+		 DL_GPIO_HYSTERESIS_DISABLE, DL_GPIO_WAKEUP_DISABLE);
+	DL_GPIO_initPeripheralInputFunctionFeatures(
+		 GPIO_I2C_0_IOMUX_SCL, GPIO_I2C_0_IOMUX_SCL_FUNC,
+		 DL_GPIO_INVERSION_DISABLE, DL_GPIO_RESISTOR_PULL_UP,
+		 DL_GPIO_HYSTERESIS_DISABLE, DL_GPIO_WAKEUP_DISABLE);
     DL_GPIO_enableHiZ(GPIO_I2C_0_IOMUX_SDA);
     DL_GPIO_enableHiZ(GPIO_I2C_0_IOMUX_SCL);
-    DL_GPIO_initPeripheralInputFunctionFeatures(GPIO_I2C_1_IOMUX_SDA,
-        GPIO_I2C_1_IOMUX_SDA_FUNC, DL_GPIO_INVERSION_DISABLE,
-        DL_GPIO_RESISTOR_NONE, DL_GPIO_HYSTERESIS_DISABLE,
-        DL_GPIO_WAKEUP_DISABLE);
-    DL_GPIO_initPeripheralInputFunctionFeatures(GPIO_I2C_1_IOMUX_SCL,
-        GPIO_I2C_1_IOMUX_SCL_FUNC, DL_GPIO_INVERSION_DISABLE,
-        DL_GPIO_RESISTOR_NONE, DL_GPIO_HYSTERESIS_DISABLE,
-        DL_GPIO_WAKEUP_DISABLE);
+    
+	DL_GPIO_initPeripheralInputFunctionFeatures(
+		 GPIO_I2C_1_IOMUX_SDA, GPIO_I2C_1_IOMUX_SDA_FUNC,
+		 DL_GPIO_INVERSION_DISABLE, DL_GPIO_RESISTOR_PULL_UP,
+		 DL_GPIO_HYSTERESIS_DISABLE, DL_GPIO_WAKEUP_DISABLE);
+	DL_GPIO_initPeripheralInputFunctionFeatures(
+		 GPIO_I2C_1_IOMUX_SCL, GPIO_I2C_1_IOMUX_SCL_FUNC,
+		 DL_GPIO_INVERSION_DISABLE, DL_GPIO_RESISTOR_PULL_UP,
+		 DL_GPIO_HYSTERESIS_DISABLE, DL_GPIO_WAKEUP_DISABLE);
     DL_GPIO_enableHiZ(GPIO_I2C_1_IOMUX_SDA);
     DL_GPIO_enableHiZ(GPIO_I2C_1_IOMUX_SCL);
 
@@ -482,11 +487,20 @@ SYSCONFIG_WEAK void SYSCFG_DL_SPI_0_init(void) {
     /*
      * Set the bit rate clock divider to generate the serial output clock
      *     outputBitRate = (spiInputClock) / ((1 + SCR) * 2)
-     *     8000000 = (32000000)/((1 + 1) * 2)
+     *     500000 = (32000000)/((1 + 31) * 2)
      */
-    DL_SPI_setBitRateSerialClockDivider(SPI_0_INST, 1);
+    DL_SPI_setBitRateSerialClockDivider(SPI_0_INST, 31);
+
+    /* Enable SPI TX interrupt as a trigger for DMA */
+    DL_SPI_enableDMATransmitEvent(SPI_0_INST);
+
+    /* Enable SPI RX interrupt as a trigger for DMA */
+    DL_SPI_enableDMAReceiveEvent(SPI_0_INST, DL_SPI_DMA_INTERRUPT_RX);
     /* Set RX and TX FIFO threshold levels */
-    DL_SPI_setFIFOThreshold(SPI_0_INST, DL_SPI_RX_FIFO_LEVEL_1_2_FULL, DL_SPI_TX_FIFO_LEVEL_1_2_EMPTY);
+    DL_SPI_setFIFOThreshold(SPI_0_INST, DL_SPI_RX_FIFO_LEVEL_ONE_FRAME, DL_SPI_TX_FIFO_LEVEL_EMPTY);
+    DL_SPI_enableInterrupt(SPI_0_INST, (DL_SPI_INTERRUPT_DMA_DONE_RX |
+		DL_SPI_INTERRUPT_DMA_DONE_TX |
+		DL_SPI_INTERRUPT_TX_EMPTY));
 
     /* Enable module */
     DL_SPI_enable(SPI_0_INST);
@@ -511,10 +525,87 @@ SYSCONFIG_WEAK void SYSCFG_DL_SPI_1_init(void) {
     DL_SPI_init(SPI_1_INST, (DL_SPI_Config *) &gSPI_1_config);
 
     /* Configure Peripheral mode */
+
+    /* Enable SPI TX interrupt as a trigger for DMA */
+    DL_SPI_enableDMATransmitEvent(SPI_1_INST);
+
+    /* Enable SPI RX interrupt as a trigger for DMA */
+    DL_SPI_enableDMAReceiveEvent(SPI_1_INST, DL_SPI_DMA_INTERRUPT_RX);
     /* Set RX and TX FIFO threshold levels */
-    DL_SPI_setFIFOThreshold(SPI_1_INST, DL_SPI_RX_FIFO_LEVEL_1_2_FULL, DL_SPI_TX_FIFO_LEVEL_1_2_EMPTY);
+    DL_SPI_setFIFOThreshold(SPI_1_INST, DL_SPI_RX_FIFO_LEVEL_ONE_FRAME, DL_SPI_TX_FIFO_LEVEL_ONE_FRAME);
+    DL_SPI_enableInterrupt(SPI_1_INST, (DL_SPI_INTERRUPT_DMA_DONE_RX |
+		DL_SPI_INTERRUPT_DMA_DONE_TX |
+		DL_SPI_INTERRUPT_TX_EMPTY));
 
     /* Enable module */
     DL_SPI_enable(SPI_1_INST);
 }
+
+static const DL_DMA_Config gDMA_CH3Config = {
+    .transferMode   = DL_DMA_SINGLE_TRANSFER_MODE,
+    .extendedMode   = DL_DMA_NORMAL_MODE,
+    .destIncrement  = DL_DMA_ADDR_INCREMENT,
+    .srcIncrement   = DL_DMA_ADDR_UNCHANGED,
+    .destWidth      = DL_DMA_WIDTH_BYTE,
+    .srcWidth       = DL_DMA_WIDTH_BYTE,
+    .trigger        = SPI_0_INST_DMA_TRIGGER_0,
+    .triggerType    = DL_DMA_TRIGGER_TYPE_EXTERNAL,
+};
+
+SYSCONFIG_WEAK void SYSCFG_DL_DMA_CH3_init(void)
+{
+    DL_DMA_initChannel(DMA, DMA_CH3_CHAN_ID , (DL_DMA_Config *) &gDMA_CH3Config);
+}
+static const DL_DMA_Config gDMA_CH2Config = {
+    .transferMode   = DL_DMA_SINGLE_TRANSFER_MODE,
+    .extendedMode   = DL_DMA_NORMAL_MODE,
+    .destIncrement  = DL_DMA_ADDR_UNCHANGED,
+    .srcIncrement   = DL_DMA_ADDR_INCREMENT,
+    .destWidth      = DL_DMA_WIDTH_BYTE,
+    .srcWidth       = DL_DMA_WIDTH_BYTE,
+    .trigger        = SPI_0_INST_DMA_TRIGGER_1,
+    .triggerType    = DL_DMA_TRIGGER_TYPE_EXTERNAL,
+};
+
+SYSCONFIG_WEAK void SYSCFG_DL_DMA_CH2_init(void)
+{
+    DL_DMA_initChannel(DMA, DMA_CH2_CHAN_ID , (DL_DMA_Config *) &gDMA_CH2Config);
+}
+static const DL_DMA_Config gDMA_CH1Config = {
+    .transferMode   = DL_DMA_SINGLE_TRANSFER_MODE,
+    .extendedMode   = DL_DMA_NORMAL_MODE,
+    .destIncrement  = DL_DMA_ADDR_INCREMENT,
+    .srcIncrement   = DL_DMA_ADDR_UNCHANGED,
+    .destWidth      = DL_DMA_WIDTH_BYTE,
+    .srcWidth       = DL_DMA_WIDTH_BYTE,
+    .trigger        = SPI_1_INST_DMA_TRIGGER_0,
+    .triggerType    = DL_DMA_TRIGGER_TYPE_EXTERNAL,
+};
+
+SYSCONFIG_WEAK void SYSCFG_DL_DMA_CH1_init(void)
+{
+    DL_DMA_initChannel(DMA, DMA_CH1_CHAN_ID , (DL_DMA_Config *) &gDMA_CH1Config);
+}
+static const DL_DMA_Config gDMA_CH0Config = {
+    .transferMode   = DL_DMA_SINGLE_TRANSFER_MODE,
+    .extendedMode   = DL_DMA_NORMAL_MODE,
+    .destIncrement  = DL_DMA_ADDR_UNCHANGED,
+    .srcIncrement   = DL_DMA_ADDR_INCREMENT,
+    .destWidth      = DL_DMA_WIDTH_BYTE,
+    .srcWidth       = DL_DMA_WIDTH_BYTE,
+    .trigger        = SPI_1_INST_DMA_TRIGGER_1,
+    .triggerType    = DL_DMA_TRIGGER_TYPE_EXTERNAL,
+};
+
+SYSCONFIG_WEAK void SYSCFG_DL_DMA_CH0_init(void)
+{
+    DL_DMA_initChannel(DMA, DMA_CH0_CHAN_ID , (DL_DMA_Config *) &gDMA_CH0Config);
+}
+SYSCONFIG_WEAK void SYSCFG_DL_DMA_init(void){
+    SYSCFG_DL_DMA_CH3_init();
+    SYSCFG_DL_DMA_CH2_init();
+    SYSCFG_DL_DMA_CH1_init();
+    SYSCFG_DL_DMA_CH0_init();
+}
+
 

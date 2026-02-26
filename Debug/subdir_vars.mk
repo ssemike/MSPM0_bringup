@@ -6,7 +6,7 @@ SHELL = cmd.exe
 
 # Add inputs and outputs from these tool invocations to the build variables 
 SYSCFG_SRCS += \
-../empty.syscfg 
+../MSPM0_interface.syscfg 
 
 C_SRCS += \
 ./ti_msp_dl_config.c \
@@ -65,7 +65,7 @@ GEN_FILES__QUOTED += \
 "ti_msp_dl_config.c" 
 
 SYSCFG_SRCS__QUOTED += \
-"../empty.syscfg" 
+"../MSPM0_interface.syscfg" 
 
 C_SRCS__QUOTED += \
 "./ti_msp_dl_config.c" \

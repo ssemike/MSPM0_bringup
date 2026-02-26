@@ -1,9 +1,10 @@
- #include "ti_msp_dl_config.h"
- #include "HAL/uart.h"
- #include <stdlib.h>
- #include <string.h>
- #include "HAL/i2c.h"
+#include "ti_msp_dl_config.h"
+#include "HAL/uart.h"
+#include <stdlib.h>
+#include <string.h>
+#include "HAL/i2c.h"
 #include "ics/BQ25628/BQ25628_functions.h"
+#include "HAL/spi_slave.h"
 extern volatile bool bq_monitor_active; 
 void cmd_pwr(char *args) {
     char *tokens[2];
@@ -233,5 +234,80 @@ void cmd_bq(char *args) {
 
     else {
         uart_printf("Unknown bq sub-command. Type 'bq' for help.\n");
+    }
+}
+
+void cmd_spi(char *args) {
+    char *tokens[3];
+    int tokenCount = CLI_Tokenize(args, tokens, 3);
+
+    if (tokenCount == 0) {
+        uart_printf("SPI Slave Testing CLI:\n"
+                    "  spi init                - Reset DMA/FIFOs and Arm\n"
+                    "  spi tx_view             - View current 16-byte Outbox\n"
+                    "  spi tx_write <idx> <val>- Update byte in Outbox\n"
+                    "  spi monitor             - Live log incoming STM32 data\n");
+        return;
+    }
+
+    char *sub = tokens[0];
+
+    /* 1. INIT (ARM) */
+    if (strcmp(sub, "init") == 0) {
+        SPI_Peripheral_Arm(&stm32Spi);
+        uart_printf("SPI Slave Initialized and Armed (Ready for STM32)\n");
+    }
+
+    /* 2. TX_VIEW */
+    else if (strcmp(sub, "tx_view") == 0) {
+        uart_printf("Current TX Buffer (Outbox):\n");
+        for (int i = 0; i < stm32Spi.size; i++) {
+            uart_printf("0x%02X ", stm32Spi.txBuf[i]);
+            if ((i + 1) % 8 == 0) uart_printf("\n");
+        }
+    }
+
+    /* 3. TX_WRITE */
+    else if (strcmp(sub, "tx_write") == 0 && tokenCount >= 3) {
+        uint8_t idx = (uint8_t)atoi(tokens[1]);
+        uint8_t val = (uint8_t)strtol(tokens[2], NULL, 0);
+
+        if (idx < stm32Spi.size) {
+            stm32Spi.txBuf[idx] = val;
+            uart_printf("Updated TX Buffer[%d] to 0x%02X\n", idx, val);
+        } else {
+            uart_printf("Error: Index out of bounds (0-15)\n");
+        }
+    }
+
+    /* 4. MONITOR */
+    else if (strcmp(sub, "monitor") == 0) {
+        uart_printf("Monitoring SPI (STM32 -> MSP)... Press any key to stop.\n");
+        
+        // Ensure we are armed before starting
+        SPI_Peripheral_Arm(&stm32Spi);
+
+        while (1) {
+            if (stm32Spi.transferComplete) {
+                uart_printf("Received from STM32:\n");
+                for (int i = 0; i < stm32Spi.size; i++) {
+                    uart_printf("%02X ", stm32Spi.rxBuf[i]);
+                }
+                uart_printf("\n---\n");
+
+                // Auto-rearm for the next packet
+                SPI_Peripheral_Arm(&stm32Spi);
+            }
+
+            // Check for UART input to break the loop (same logic as your BQ monitor)
+            if (DL_UART_Main_isRXFIFOEmpty(UART_0_INST) == false) {
+                DL_UART_Main_receiveData(UART_0_INST);
+                uart_printf("SPI Monitor Stopped.\n");
+                break;
+            }
+        }
+    }
+    else {
+        uart_printf("Unknown SPI sub-command.\n");
     }
 }
