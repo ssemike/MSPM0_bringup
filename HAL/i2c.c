@@ -75,8 +75,8 @@ void Shared_I2C_IRQHandler(I2C_Regs *i2c) {
     }
 }
 
-// Generic I2C Write - Now accepts i2c instance pointer
-void I2C_WriteDevice(I2C_Regs *i2c, uint8_t dev_addr, uint8_t reg_addr, uint8_t *reg_data, uint8_t count) {
+I2C_Status I2C_WriteDevice(I2C_Regs *i2c, uint8_t dev_addr, uint8_t reg_addr, 
+                           uint8_t *reg_data, uint8_t count) {
     gTxPacket[0] = reg_addr;
     for (int i = 0; i < count; i++) {
         gTxPacket[i+1] = reg_data[i];
@@ -88,16 +88,26 @@ void I2C_WriteDevice(I2C_Regs *i2c, uint8_t dev_addr, uint8_t reg_addr, uint8_t 
 
     while (!(DL_I2C_getControllerStatus(i2c) & DL_I2C_CONTROLLER_STATUS_IDLE));
 
+    gI2cControllerStatus = I2C_STATUS_TX_STARTED; // Reset before transfer
     DL_I2C_startControllerTransfer(i2c, dev_addr, DL_I2C_CONTROLLER_DIRECTION_TX, count + 1);
 
-    while ((gI2cControllerStatus != I2C_STATUS_TX_COMPLETE) && (gI2cControllerStatus != I2C_STATUS_ERROR)) {
+    while ((gI2cControllerStatus != I2C_STATUS_TX_COMPLETE) && 
+           (gI2cControllerStatus != I2C_STATUS_ERROR)) {
         __WFE();
+    }
+
+    // Check result
+    if (gI2cControllerStatus == I2C_STATUS_ERROR) {
+        DL_I2C_flushControllerTXFIFO(i2c);
+        return I2C_ERROR_NACK; 
     }
 
     while (DL_I2C_getControllerStatus(i2c) & DL_I2C_CONTROLLER_STATUS_BUSY_BUS);
     
     delay_cycles(1000);
     DL_I2C_flushControllerTXFIFO(i2c);
+    
+    return I2C_SUCCESS;
 }
 
 // Generic I2C Read - Now accepts i2c instance pointer

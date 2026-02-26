@@ -148,12 +148,22 @@ void cmd_bq(char *args) {
 
     char *sub = tokens[0];
 
-    /* Charger initialization */
+/* Charger initialization */
     if (strcmp(sub, "init") == 0) {
-        BQ25628E_Init_Default();
-        uart_printf("Charger registers initialized with desired configuration\n");
+        // Pre-check device presence
+        uart_printf("Checking for BQ25628E...\n");
+        if (!I2C_TryAddress(I2C_0_INST, BQ25628E_I2C_ADDR)) {
+            uart_printf("ERROR: Device not found at 0x%02X\n", BQ25628E_I2C_ADDR);
+            uart_printf("Run 'i2cscan 0' to see available devices\n");
+            return;
+        }
+        uart_printf("Device found! Initializing...\n");
+    if (BQ25628E_Init_Default()) {
+        uart_printf("Charger initialized successfully\n");
+    } else {
+        uart_printf("ERROR: Charger initialization failed\n");
     }
-
+    }
     /* Read single register / register set (8-bit) */
     else if (strcmp(sub, "read") == 0 && tokenCount >= 2) {
         uint8_t reg = (uint8_t)strtol(tokens[1], NULL, 16);

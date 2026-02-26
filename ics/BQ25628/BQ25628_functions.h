@@ -79,7 +79,7 @@
 /* -------------------------------------------------------------------------- */
 /* Public API                                                                 */
 /* -------------------------------------------------------------------------- */
-void BQ25628E_Init_Default(void);
+bool BQ25628E_Init_Default(void);
 void BQ25628E_UpdateTelemetry(void);
 void BQ25628E_PetWatchdog(void);
 

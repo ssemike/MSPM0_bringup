@@ -10,12 +10,24 @@
  */
 
 /********* I2C Master Driver Functions *********/
+
+// In i2c.h:
+typedef enum {
+    I2C_SUCCESS = 0,
+    I2C_ERROR_NACK,
+    I2C_ERROR_TIMEOUT,
+    I2C_ERROR_ARB_LOST
+} I2C_Status;
+
+I2C_Status I2C_WriteDevice(I2C_Regs *i2c, uint8_t dev_addr, uint8_t reg_addr, 
+                           uint8_t *reg_data, uint8_t count);
 void i2c_init(void);
 // Shared logic for I2C Interrupts
 void Shared_I2C_IRQHandler(I2C_Regs *i2c);
 
 // Generic I2C write - i2c: I2C_0_INST or I2C_1_INST
-void I2C_WriteDevice(I2C_Regs *i2c, uint8_t dev_addr, uint8_t reg_addr, uint8_t *reg_data, uint8_t count);
+I2C_Status I2C_WriteDevice(I2C_Regs *i2c, uint8_t dev_addr, uint8_t reg_addr, 
+                           uint8_t *reg_data, uint8_t count);
 
 // Generic I2C read - i2c: I2C_0_INST or I2C_1_INST
 void I2C_ReadDevice(I2C_Regs *i2c, uint8_t dev_addr, uint8_t reg_addr, uint8_t *reg_data, uint8_t count);

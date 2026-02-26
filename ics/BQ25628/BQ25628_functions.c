@@ -43,9 +43,7 @@ void BQ25628E_UpdateBits8(uint8_t reg, uint8_t mask, uint8_t value) {
 /* -------------------------------------------------------------------------- */
 /* Public API Implementation                                       */
 /* -------------------------------------------------------------------------- */
-
-void BQ25628E_Init_Default(void) {
-    // BQ25628E_WriteReg8(BQ25628E_REG_CTRL1, BQ25628E_CTRL1_REG_RST); //resets registers
+bool BQ25628E_Init_Default(void) {
 
     BQ25628E_Set_VREG_mV(3600);
     BQ25628E_Set_ICHG_mA(2000);
