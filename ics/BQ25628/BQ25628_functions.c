@@ -57,6 +57,7 @@ bool BQ25628E_Init_Default(void) {
 
     BQ25628E_WriteReg8(BQ25628E_REG_ADC_CTRL, BQ25628E_ADC_EN);
     // BQ25628E_Set_ChargerEnable(true);
+    return true;
 }
 
 
