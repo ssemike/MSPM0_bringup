@@ -4,13 +4,14 @@
 #include "functions.h"
 #include "HAL/uart.h"
 #include "ics/BQ25628/BQ25628_functions.h"
+#include "ics/BQ27Z7/BQ27Z7_functions.h"
 #include "HAL/spi_slave.h"
 
-volatile bool bq_monitor_active = false;
-volatile bool hall_monitor_active = false;
-volatile uint32_t hall_monitor_rate = 200; 
+volatile bool bq_monitor_active    = false;
+volatile bool hall_monitor_active  = false;
+volatile bool gauge_monitor_active = false;
+volatile uint32_t monitor_rate = 2000; 
 volatile uint32_t hall_monitor_counter = 0;
-
 
 void setupCLI(void) {
     CLI_RegisterCommand("help", cmd_help, "Show available commands");
@@ -19,6 +20,7 @@ void setupCLI(void) {
     CLI_RegisterCommand("hall", cmd_hall, "Hall sensor: hall <pwr|status>");
     CLI_RegisterCommand("bq", cmd_bq, "BQ25628E charger control - type bq for full help");
     CLI_RegisterCommand("spi", cmd_spi, "SPI Slave: init, tx_view, tx_write, monitor");
+    CLI_RegisterCommand("gauge",   cmd_gauge,   "BQ27Z746 gauge — type gauge for help");
 }
 
 
@@ -38,7 +40,7 @@ int main(void)
             CLI_ProcessInput(processingBuffer);
         }
         if (hall_monitor_active) {
-            delay_cycles(200 * 32000); // Fixed 200ms delay
+            delay_cycles(monitor_rate * 32000); // Fixed 200ms delay
             
             uint8_t pin_state = DL_GPIO_readPins(EXTERNAL_INTERRUPT_SETUP_INT_PORT, EXTERNAL_INTERRUPT_SETUP_INT_PIN);
             
@@ -56,7 +58,7 @@ int main(void)
             }
         }
         if (bq_monitor_active) {
-            delay_cycles(200 * 32000); // 200 ms refresh
+            delay_cycles(monitor_rate * 32000); // 200 ms refresh
 
             uint8_t charger_int = DL_GPIO_readPins(EXTERNAL_INTERRUPT_CHARGER_INT_PORT, EXTERNAL_INTERRUPT_CHARGER_INT_PIN); 
 
@@ -87,6 +89,57 @@ int main(void)
                 bq_monitor_active = false;
                 get_UART_buffer(processingBuffer);
                 uart_printf("Monitor stopped\n");
+            }
+        }
+        if (gauge_monitor_active) {
+            delay_cycles(monitor_rate * 32000);
+
+            BQ27Z746_UpdateTelemetry(I2C_0_INST);
+
+            uint16_t tte = BQ27Z746_Get_TimeToEmpty_min();
+            uint16_t ttf = BQ27Z746_Get_TimeToFull_min();
+
+            /* Determine a one-word state string from cached BatteryStatus */
+            const char *state;
+            if      (BQ27Z746_IsDischarging())     state = "DISCHARGING";
+            else if (BQ27Z746_IsFullyCharged())    state = "FULLY CHARGED";
+            else if (BQ27Z746_IsFullyDischarged()) state = "FULLY DISCHARGED";
+            else                                   state = "CHARGING";
+
+            uart_printf("=== BQ27Z746 MONITOR (200ms) ===\n");
+            uart_printf("State  : %s\n", state);
+            uart_printf("SOC    : %3d %%   SoH: %3d %%   Cycles: %d\n",
+                        BQ27Z746_Get_SOC_pct(),
+                        BQ27Z746_Get_StateOfHealth_pct(),
+                        BQ27Z746_Get_CycleCount());
+            uart_printf("VBAT   : %4d mV\n", BQ27Z746_Get_Voltage_mV());
+            uart_printf("IBAT   : %5d mA   AvgI: %5d mA\n",
+                        BQ27Z746_Get_Current_mA(),
+                        BQ27Z746_Get_AvgCurrent_mA());
+            uart_printf("AvgPwr : %5d mW\n", BQ27Z746_Get_AvgPower_mW());
+            uart_printf("RemCap : %4d mAh  FullCap: %4d mAh\n",
+                        BQ27Z746_Get_RemainingCap_mAh(),
+                        BQ27Z746_Get_FullChargeCap_mAh());
+            uart_printf("Temp   : %3d C   InternalTemp: %3d C\n",
+                        BQ27Z746_Get_Temperature_C(),
+                        BQ27Z746_Get_InternalTemp_C());
+
+            /* TTE / TTF with 0xFFFF guard */
+            uart_printf("TTE    : ");
+            if (tte == 0xFFFFu) uart_printf("  ---");
+            else                uart_printf("%4d min", tte);
+
+            uart_printf("   TTF: ");
+            if (ttf == 0xFFFFu) uart_printf("  ---\n");
+            else                uart_printf("%4d min\n", ttf);
+
+            uart_printf("Status : 0x%04X\n", BQ27Z746_Get_BatteryStatus());
+            uart_printf("--------------------------------\n");
+
+            if (data_received) {
+                gauge_monitor_active = false;
+                get_UART_buffer(processingBuffer);
+                uart_printf("Gauge monitor stopped\n");
             }
         }
     }

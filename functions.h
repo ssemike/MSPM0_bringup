@@ -26,4 +26,6 @@ void cmd_bq(char *args);
 
 void cmd_spi(char *args);
 
+void cmd_gauge(char *args);
+
 #endif /* FUNCTIONS_H_ */

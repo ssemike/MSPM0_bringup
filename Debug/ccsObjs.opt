@@ -8,7 +8,7 @@
 "./HAL/uart.o"
 "./ics/BQ25628/BQ25628_functions.o"
 "./ics/BQ27Z7/BQ27Z7_functions.o"
-"./ics/BQ27Z7/BQ27Z7_main.o"
+"./ics/BQ27Z7/gauge.o"
 -l"./device_linker.cmd"
 -ldevice.cmd.genlibs
 -llibc.a

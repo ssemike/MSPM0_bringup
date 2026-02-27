@@ -5,7 +5,12 @@
 #include "HAL/i2c.h"
 #include "ics/BQ25628/BQ25628_functions.h"
 #include "HAL/spi_slave.h"
+#include "ics/BQ27Z7/BQ27Z7_functions.h"
+
+extern volatile bool gauge_monitor_active;
 extern volatile bool bq_monitor_active; 
+
+
 void cmd_pwr(char *args) {
     char *tokens[2];
     int tokenCount = CLI_Tokenize(args, tokens, 2);
@@ -233,7 +238,7 @@ void cmd_bq(char *args) {
     /* Monitor charging status and charger flag */
     else if (strcmp(sub, "monitor") == 0) {
         bq_monitor_active = true;
-        uart_printf("Monitor started (200ms) — type any command to stop\n");
+        uart_printf("Monitor started  — type any command to stop\n");
     }
 
     /* Stop monitoring */
@@ -319,5 +324,195 @@ void cmd_spi(char *args) {
     }
     else {
         uart_printf("Unknown SPI sub-command.\n");
+    }
+}
+
+static void print_battery_status(uint16_t status)
+{
+    uart_printf("BatteryStatus: 0x%04X\n", status);
+    uart_printf("  FC  (Fully Charged)    : %s\n", (status & BQ27Z746_STATUS_FC)   ? "YES" : "no");
+    uart_printf("  FD  (Fully Discharged) : %s\n", (status & BQ27Z746_STATUS_FD)   ? "YES" : "no");
+    uart_printf("  DSG (Discharging)      : %s\n", (status & BQ27Z746_STATUS_DSG)  ? "YES" : "no");
+    uart_printf("  INIT (Initializing)    : %s\n", (status & BQ27Z746_STATUS_INIT) ? "YES" : "no");
+    uart_printf("  RCA (RemainingCap Alm) : %s\n", (status & BQ27Z746_STATUS_RCA)  ? "YES" : "no");
+    uart_printf("  TDA (TermDischarge Alm): %s\n", (status & BQ27Z746_STATUS_TDA)  ? "YES" : "no");
+}
+
+static void print_time(uint16_t minutes)
+{
+    if (minutes == 0xFFFFu)
+        uart_printf("  ---");
+    else
+        uart_printf("%4dmin", minutes);
+}
+
+/* ================================================================
+ * cmd_gauge
+ * ================================================================ */
+void cmd_gauge(char *args)
+{
+    char *tokens[4];
+    int tokenCount = CLI_Tokenize(args, tokens, 4);
+
+    if (tokenCount == 0) {
+        uart_printf("BQ27Z746 Gauge CLI\n"
+                    "  gauge init           - verify comms, confirm device type\n"
+                    "  gauge dump           - read all telemetry registers\n"
+                    "  gauge status         - decode BatteryStatus bits\n"
+                    "  gauge info           - device type, FW version, ChemID, op/chg/gauge status\n"
+                    "  gauge read <reg>     - raw 16-bit register read (hex reg)\n"
+                    "  gauge mac <cmd>      - issue MAC command (hex) and dump response\n"
+                    "  gauge monitor        - 200ms live telemetry (any key to stop)\n"
+                    "  gauge stop           - stop monitor\n");
+        return;
+    }
+
+    char *sub = tokens[0];
+
+    if (strcmp(sub, "init") == 0) {
+        uart_printf("Checking for BQ27Z746 on I2C0...\n");
+
+        /* Quick bus-level check first */
+        if (!I2C_TryAddress(I2C_0_INST, GAUGE_I2C_ADDR)) {
+            uart_printf("ERROR: No device found at 0x%02X\n", GAUGE_I2C_ADDR);
+            uart_printf("Run 'i2cscan 0' to check what is on the bus\n");
+            return;
+        }
+
+        if (!BQ27Z746_Init(I2C_0_INST)) {
+            uart_printf("ERROR: Init failed — device type mismatch or comms error\n");
+            return;
+        }
+
+        uart_printf("BQ27Z746 found and confirmed (DeviceType = 0x7746)\n");
+
+        uint16_t fw = 0u;
+        if (BQ27Z746_GetFirmwareVersion(I2C_0_INST, &fw))
+            uart_printf("Firmware Version : 0x%04X\n", fw);
+        else
+            uart_printf("Firmware Version : read failed\n");
+    }
+
+
+    else if (strcmp(sub, "dump") == 0) {
+        uart_printf("=== BQ27Z746 Register Dump ===\n");
+        uart_printf("Voltage          [0x08]: %4d mV\n",  BQ27Z746_ReadVoltage_mV(I2C_0_INST));
+        uart_printf("Current          [0x0C]: %5d mA\n",  BQ27Z746_ReadCurrent_mA(I2C_0_INST));
+        uart_printf("Avg Current      [0x14]: %5d mA\n",  BQ27Z746_ReadAvgCurrent_mA(I2C_0_INST));
+        uart_printf("Avg Power        [0x22]: %5d mW\n",  BQ27Z746_ReadAvgPower_mW(I2C_0_INST));
+        uart_printf("SOC              [0x2C]: %3d %%\n",   BQ27Z746_ReadSOC_pct(I2C_0_INST));
+        uart_printf("Remaining Cap    [0x10]: %4d mAh\n", BQ27Z746_ReadRemainingCap_mAh(I2C_0_INST));
+        uart_printf("Full Charge Cap  [0x12]: %4d mAh\n", BQ27Z746_ReadFullChargeCap_mAh(I2C_0_INST));
+        uart_printf("State of Health  [0x2E]: %3d %%\n",   BQ27Z746_ReadStateOfHealth_pct(I2C_0_INST));
+        uart_printf("Temperature      [0x06]: %3d C\n",   BQ27Z746_ReadTemperature_C(I2C_0_INST));
+        uart_printf("Internal Temp    [0x28]: %3d C\n",   BQ27Z746_ReadInternalTemp_C(I2C_0_INST));
+
+        uint16_t tte = BQ27Z746_ReadTimeToEmpty_min(I2C_0_INST);
+        uint16_t ttf = BQ27Z746_ReadTimeToFull_min(I2C_0_INST);
+        uart_printf("Time to Empty    [0x16]: "); print_time(tte); uart_printf("\n");
+        uart_printf("Time to Full     [0x18]: "); print_time(ttf); uart_printf("\n");
+
+        uart_printf("Cycle Count      [0x2A]: %d\n",      BQ27Z746_ReadCycleCount(I2C_0_INST));
+        uart_printf("Battery Status   [0x0A]: 0x%04X\n",  BQ27Z746_ReadBatteryStatus(I2C_0_INST));
+    }
+
+
+    else if (strcmp(sub, "status") == 0) {
+        uint16_t status = BQ27Z746_ReadBatteryStatus(I2C_0_INST);
+        print_battery_status(status);
+    }
+
+
+    else if (strcmp(sub, "info") == 0) {
+        uart_printf("=== BQ27Z746 Device Info ===\n");
+
+        uint16_t dev_type = 0u;
+        if (BQ27Z746_GetDeviceType(I2C_0_INST, &dev_type))
+            uart_printf("Device Type      : 0x%04X %s\n", dev_type,
+                        (dev_type == BQ27Z746_DEVICE_TYPE) ? "(OK)" : "(MISMATCH)");
+        else
+            uart_printf("Device Type      : read failed\n");
+
+        uint16_t fw = 0u;
+        if (BQ27Z746_GetFirmwareVersion(I2C_0_INST, &fw))
+            uart_printf("Firmware Version : 0x%04X\n", fw);
+        else
+            uart_printf("Firmware Version : read failed\n");
+
+        uint16_t chem = 0u;
+        if (BQ27Z746_GetChemID(I2C_0_INST, &chem))
+            uart_printf("Chem ID          : 0x%04X\n", chem);
+        else
+            uart_printf("Chem ID          : read failed\n");
+
+        uint32_t op_status = 0u;
+        if (BQ27Z746_GetOperationStatus(I2C_0_INST, &op_status))
+            uart_printf("Operation Status : 0x%08X\n", (unsigned int)op_status);
+        else
+            uart_printf("Operation Status : read failed\n");
+
+        uint16_t chg_status = 0u;
+        if (BQ27Z746_GetChargingStatus(I2C_0_INST, &chg_status))
+            uart_printf("Charging Status  : 0x%04X\n", chg_status);
+        else
+            uart_printf("Charging Status  : read failed\n");
+
+        uint32_t gauge_status = 0u;
+        if (BQ27Z746_GetGaugingStatus(I2C_0_INST, &gauge_status))
+            uart_printf("Gauging Status   : 0x%08X\n", (unsigned int)gauge_status);
+        else
+            uart_printf("Gauging Status   : read failed\n");
+    }
+
+
+    else if (strcmp(sub, "read") == 0 && tokenCount >= 2) {
+        uint8_t reg = (uint8_t)strtol(tokens[1], NULL, 16);
+        uint16_t val = (uint16_t)gauge_cmd_read(I2C_0_INST, reg);
+        uart_printf("0x%02X = 0x%04X (%d)\n", reg, val, val);
+    }
+
+    else if (strcmp(sub, "mac") == 0 && tokenCount >= 2) {
+        uint16_t cmd = (uint16_t)strtol(tokens[1], NULL, 16);
+        uint8_t  data[BQ27Z746_MAC_DATA_LEN];
+        uint8_t  len = 0u;
+
+        uart_printf("Sending MAC cmd 0x%04X...\n", cmd);
+
+        if (!BQ27Z746_MAC_Read(I2C_0_INST, cmd, data, &len)) {
+            uart_printf("ERROR: MAC read failed (checksum mismatch or comms error)\n");
+            return;
+        }
+
+        uart_printf("Response (%d bytes):\n", len);
+        for (uint8_t i = 0u; i < len; i++) {
+            uart_printf("  [%02d] 0x%02X (%3d)\n", i, data[i], data[i]);
+        }
+
+        /* If response is 2 bytes, also print the little-endian uint16 interpretation */
+        if (len >= 2u) {
+            uint16_t as_u16 = (uint16_t)(data[0] | ((uint16_t)data[1] << 8u));
+            uart_printf("  => as uint16 (LE): 0x%04X (%d)\n", as_u16, as_u16);
+        }
+    }
+
+    /* ----------------------------------------------------------
+     * gauge monitor
+     * Sets the flag — the actual update loop lives in main.c
+     * ---------------------------------------------------------- */
+    else if (strcmp(sub, "monitor") == 0) {
+        gauge_monitor_active = true;
+        uart_printf("Gauge monitor started  — type any command to stop\n");
+    }
+
+    /* ----------------------------------------------------------
+     * gauge stop
+     * ---------------------------------------------------------- */
+    else if (strcmp(sub, "stop") == 0) {
+        gauge_monitor_active = false;
+        uart_printf("Gauge monitor stopped\n");
+    }
+
+    else {
+        uart_printf("Unknown gauge sub-command. Type 'gauge' for help.\n");
     }
 }

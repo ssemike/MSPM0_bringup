@@ -26,8 +26,8 @@ enum I2cControllerStatus {
 
 // Counters and Buffers
 uint32_t gTxLen, gTxCount;
-uint8_t gTxPacket[4];
-uint8_t gRxPacket[32];
+uint8_t gTxPacket[34];
+uint8_t gRxPacket[34];
 uint32_t gRxLen, gRxCount;
 
 /********* I2C Master Driver Functions *********/
@@ -110,39 +110,61 @@ I2C_Status I2C_WriteDevice(I2C_Regs *i2c, uint8_t dev_addr, uint8_t reg_addr,
     return I2C_SUCCESS;
 }
 
-// Generic I2C Read - Now accepts i2c instance pointer
-void I2C_ReadDevice(I2C_Regs *i2c, uint8_t dev_addr, uint8_t reg_addr, uint8_t *reg_data, uint8_t count) {
-    gTxPacket[0] = reg_addr;
-    gRxLen = count;
+I2C_Status I2C_ReadDevice(I2C_Regs *i2c, uint8_t dev_addr, uint8_t reg_addr, uint8_t *reg_data, uint8_t count){
+    gRxLen   = count;
     gRxCount = 0;
 
-    DL_I2C_enableInterrupt(i2c, DL_I2C_INTERRUPT_CONTROLLER_TXFIFO_TRIGGER);
+    // Reset status
+    gI2cControllerStatus = I2C_STATUS_RX_STARTED;
+
+    // === Phase 1: Send register address (TX) ===
+    gTxPacket[0] = reg_addr;
     DL_I2C_flushControllerTXFIFO(i2c);
-    DL_I2C_fillControllerTXFIFO(i2c, &gTxPacket[0], 1);
+    DL_I2C_fillControllerTXFIFO(i2c, gTxPacket, 1);
+    DL_I2C_enableInterrupt(i2c, DL_I2C_INTERRUPT_CONTROLLER_TXFIFO_TRIGGER);
 
     while (!(DL_I2C_getControllerStatus(i2c) & DL_I2C_CONTROLLER_STATUS_IDLE));
     DL_I2C_startControllerTransfer(i2c, dev_addr, DL_I2C_CONTROLLER_DIRECTION_TX, 1);
 
-    while ((gI2cControllerStatus != I2C_STATUS_TX_COMPLETE) && (gI2cControllerStatus != I2C_STATUS_ERROR)) {
+    while ((gI2cControllerStatus != I2C_STATUS_TX_COMPLETE) &&
+           (gI2cControllerStatus != I2C_STATUS_ERROR)) {
         __WFE();
     }
 
-    while (DL_I2C_getControllerStatus(i2c) & DL_I2C_CONTROLLER_STATUS_BUSY_BUS);
+    if (gI2cControllerStatus == I2C_STATUS_ERROR) {
+        DL_I2C_flushControllerTXFIFO(i2c);
+        return I2C_ERROR_NACK;
+    }
 
+    while (DL_I2C_getControllerStatus(i2c) & DL_I2C_CONTROLLER_STATUS_BUSY_BUS);
     delay_cycles(1000);
-    gI2cControllerStatus = I2C_STATUS_RX_STARTED;
-    DL_I2C_enableInterrupt(i2c, DL_I2C_INTERRUPT_CONTROLLER_RXFIFO_TRIGGER | DL_I2C_INTERRUPT_CONTROLLER_RX_DONE);
+
+    // === Phase 2: Read data (RX) ===
+    DL_I2C_enableInterrupt(i2c, DL_I2C_INTERRUPT_CONTROLLER_RXFIFO_TRIGGER |
+                               DL_I2C_INTERRUPT_CONTROLLER_RX_DONE);
     DL_I2C_startControllerTransfer(i2c, dev_addr, DL_I2C_CONTROLLER_DIRECTION_RX, count);
 
+    while ((gI2cControllerStatus != I2C_STATUS_RX_COMPLETE) &&
+           (gI2cControllerStatus != I2C_STATUS_ERROR)) {
+        __WFE();
+    }
+
+    if (gI2cControllerStatus == I2C_STATUS_ERROR) {
+        DL_I2C_flushControllerRXFIFO(i2c);
+        return I2C_ERROR_NACK;
+    }
+
+    // Copy data
     for (uint8_t i = 0; i < count; i++) {
-        while (gRxCount <= i && gI2cControllerStatus != I2C_STATUS_ERROR);
         reg_data[i] = gRxPacket[i];
     }
 
+    // Cleanup
     DL_I2C_flushControllerTXFIFO(i2c);
     DL_I2C_flushControllerRXFIFO(i2c);
-}
 
+    return I2C_SUCCESS;
+}
 bool I2C_TryAddress(I2C_Regs *i2c, uint8_t dev_addr)
 {
     uint8_t dummy = 0x00;
@@ -186,7 +208,7 @@ bool I2C_TryAddress(I2C_Regs *i2c, uint8_t dev_addr)
     DL_I2C_flushControllerTXFIFO(i2c);
     gI2cControllerStatus = I2C_STATUS_IDLE;
     
-    delay_cycles(1000);  // Small delay between address probes
+    delay_cycles(1000); 
     
     return success;
 }
