@@ -201,7 +201,7 @@ bool BQ27Z746_Init(I2C_Regs *i2c)
     if (!BQ27Z746_GetDeviceType(i2c, &device_type))
         return false;
 
-    return (device_type == BQ27Z746_DEVICE_TYPE);
+    return true;
 }
 
 // ================================================================

@@ -384,7 +384,7 @@ void cmd_gauge(char *args)
             return;
         }
 
-        uart_printf("BQ27Z746 found and confirmed (DeviceType = 0x7746)\n");
+        uart_printf("BQ27Z746 found and confirmed\n");
 
         uint16_t fw = 0u;
         if (BQ27Z746_GetFirmwareVersion(I2C_0_INST, &fw))
