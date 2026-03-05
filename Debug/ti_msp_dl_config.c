@@ -164,14 +164,14 @@ SYSCONFIG_WEAK void SYSCFG_DL_GPIO_init(void)
         GPIO_SPI_0_IOMUX_CS0, GPIO_SPI_0_IOMUX_CS0_FUNC);
     DL_GPIO_initPeripheralOutputFunction(
         GPIO_SPI_0_IOMUX_CS1, GPIO_SPI_0_IOMUX_CS1_FUNC);
-    DL_GPIO_initPeripheralInputFunction(
-        GPIO_SPI_1_IOMUX_SCLK, GPIO_SPI_1_IOMUX_SCLK_FUNC);
-    DL_GPIO_initPeripheralInputFunction(
-        GPIO_SPI_1_IOMUX_PICO, GPIO_SPI_1_IOMUX_PICO_FUNC);
     DL_GPIO_initPeripheralOutputFunction(
-        GPIO_SPI_1_IOMUX_POCI, GPIO_SPI_1_IOMUX_POCI_FUNC);
+        GPIO_SPI_1_IOMUX_SCLK, GPIO_SPI_1_IOMUX_SCLK_FUNC);
+    DL_GPIO_initPeripheralOutputFunction(
+        GPIO_SPI_1_IOMUX_PICO, GPIO_SPI_1_IOMUX_PICO_FUNC);
     DL_GPIO_initPeripheralInputFunction(
-        GPIO_SPI_1_IOMUX_CS, GPIO_SPI_1_IOMUX_CS_FUNC);
+        GPIO_SPI_1_IOMUX_POCI, GPIO_SPI_1_IOMUX_POCI_FUNC);
+    DL_GPIO_initPeripheralOutputFunction(
+        GPIO_SPI_1_IOMUX_CS1, GPIO_SPI_1_IOMUX_CS1_FUNC);
 
     DL_GPIO_initDigitalInputFeatures(EXTERNAL_INTERRUPT_PIR_TRIGGER_IOMUX,
 		 DL_GPIO_INVERSION_DISABLE, DL_GPIO_RESISTOR_NONE,
@@ -506,7 +506,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_SPI_0_init(void) {
     DL_SPI_enable(SPI_0_INST);
 }
 static const DL_SPI_Config gSPI_1_config = {
-    .mode        = DL_SPI_MODE_PERIPHERAL,
+    .mode        = DL_SPI_MODE_CONTROLLER,
     .frameFormat = DL_SPI_FRAME_FORMAT_MOTO4_POL0_PHA0,
     .parity      = DL_SPI_PARITY_NONE,
     .dataSize    = DL_SPI_DATA_SIZE_8,
@@ -524,7 +524,13 @@ SYSCONFIG_WEAK void SYSCFG_DL_SPI_1_init(void) {
 
     DL_SPI_init(SPI_1_INST, (DL_SPI_Config *) &gSPI_1_config);
 
-    /* Configure Peripheral mode */
+    /* Configure Controller mode */
+    /*
+     * Set the bit rate clock divider to generate the serial output clock
+     *     outputBitRate = (spiInputClock) / ((1 + SCR) * 2)
+     *     500000 = (32000000)/((1 + 31) * 2)
+     */
+    DL_SPI_setBitRateSerialClockDivider(SPI_1_INST, 31);
 
     /* Enable SPI TX interrupt as a trigger for DMA */
     DL_SPI_enableDMATransmitEvent(SPI_1_INST);

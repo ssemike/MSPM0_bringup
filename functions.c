@@ -4,7 +4,7 @@
 #include <string.h>
 #include "HAL/i2c.h"
 #include "ics/BQ25628/BQ25628_functions.h"
-#include "HAL/spi_slave.h"
+#include "HAL/spi_master.h"
 #include "ics/BQ27Z7/BQ27Z7_functions.h"
 
 extern volatile bool gauge_monitor_active;
@@ -257,24 +257,17 @@ void cmd_spi(char *args) {
     int tokenCount = CLI_Tokenize(args, tokens, 3);
 
     if (tokenCount == 0) {
-        uart_printf("SPI Slave Testing CLI:\n"
-                    "  spi init                - Reset DMA/FIFOs and Arm\n"
+        uart_printf("SPI Master Testing CLI:\n"
                     "  spi tx_view             - View current 16-byte Outbox\n"
                     "  spi tx_write <idx> <val>- Update byte in Outbox\n"
-                    "  spi monitor             - Live log incoming STM32 data\n");
+                    "  spi test            - test comms over SPI\n" );
         return;
     }
 
     char *sub = tokens[0];
 
-    /* 1. INIT (ARM) */
-    if (strcmp(sub, "init") == 0) {
-        SPI_Peripheral_Arm(&stm32Spi);
-        uart_printf("SPI Slave Initialized and Armed (Ready for STM32)\n");
-    }
-
     /* 2. TX_VIEW */
-    else if (strcmp(sub, "tx_view") == 0) {
+    if (strcmp(sub, "tx_view") == 0) {
         uart_printf("Current TX Buffer (Outbox):\n");
         for (int i = 0; i < stm32Spi.size; i++) {
             uart_printf("0x%02X ", stm32Spi.txBuf[i]);
@@ -296,24 +289,18 @@ void cmd_spi(char *args) {
     }
 
     /* 4. MONITOR */
-    else if (strcmp(sub, "monitor") == 0) {
-        uart_printf("Monitoring SPI (STM32 -> MSP)... Press any key to stop.\n");
-        
-        // Ensure we are armed before starting
-        SPI_Peripheral_Arm(&stm32Spi);
-
+    else if (strcmp(sub, "test") == 0) {
+        uart_printf("Communicating over SPI (MSP -> STM32)... Press any key to stop.\n");
+        SPI_Controller_Arm(&stm32Spi);
         while (1) {
-            if (stm32Spi.transferComplete) {
+            if (stm32Spi.rxDone) {
                 uart_printf("Received from STM32:\n");
                 for (int i = 0; i < stm32Spi.size; i++) {
                     uart_printf("%02X ", stm32Spi.rxBuf[i]);
                 }
                 uart_printf("\n---\n");
-
-                // Auto-rearm for the next packet
-                SPI_Peripheral_Arm(&stm32Spi);
+                stm32Spi.rxDone = false;
             }
-
             // Check for UART input to break the loop (same logic as your BQ monitor)
             if (DL_UART_Main_isRXFIFOEmpty(UART_0_INST) == false) {
                 DL_UART_Main_receiveData(UART_0_INST);

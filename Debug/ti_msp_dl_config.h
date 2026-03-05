@@ -193,10 +193,10 @@ extern "C" {
 #define GPIO_SPI_1_SCLK_PIN                                      DL_GPIO_PIN_23
 #define GPIO_SPI_1_IOMUX_SCLK                                   (IOMUX_PINCM51)
 #define GPIO_SPI_1_IOMUX_SCLK_FUNC                   IOMUX_PINCM51_PF_SPI1_SCLK
-#define GPIO_SPI_1_CS_PORT                                                GPIOB
-#define GPIO_SPI_1_CS_PIN                                        DL_GPIO_PIN_27
-#define GPIO_SPI_1_IOMUX_CS                                     (IOMUX_PINCM58)
-#define GPIO_SPI_1_IOMUX_CS_FUNC                IOMUX_PINCM58_PF_SPI1_CS1_POCI1
+#define GPIO_SPI_1_CS1_PORT                                               GPIOB
+#define GPIO_SPI_1_CS1_PIN                                       DL_GPIO_PIN_27
+#define GPIO_SPI_1_IOMUX_CS1                                    (IOMUX_PINCM58)
+#define GPIO_SPI_1_IOMUX_CS1_FUNC               IOMUX_PINCM58_PF_SPI1_CS1_POCI1
 
 
 

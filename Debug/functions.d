@@ -85,7 +85,7 @@ functions.o: ../functions.c \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_interrupt.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_systick.h \
  ../HAL/uart.h ../HAL/i2c.h ../ics/BQ25628/BQ25628_functions.h \
- ../HAL/spi_slave.h ../ics/BQ27Z7/BQ27Z7_functions.h \
+ ../HAL/spi_master.h ../ics/BQ27Z7/BQ27Z7_functions.h \
  C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/i2c.h \
  ../ics/BQ27Z7/gauge.h
 ti_msp_dl_config.h:
@@ -174,7 +174,7 @@ C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_systick.h:
 ../HAL/uart.h:
 ../HAL/i2c.h:
 ../ics/BQ25628/BQ25628_functions.h:
-../HAL/spi_slave.h:
+../HAL/spi_master.h:
 ../ics/BQ27Z7/BQ27Z7_functions.h:
 C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/i2c.h:
 ../ics/BQ27Z7/gauge.h:

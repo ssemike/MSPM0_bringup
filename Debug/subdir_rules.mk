@@ -5,19 +5,19 @@
 SHELL = cmd.exe
 
 # Each subdirectory must supply rules for building sources it contributes
-build-1973321455: ../MSPM0_interface.syscfg
+build-413538321: ../MSPM0_interface.syscfg
 	@echo 'Building file: "$<"'
 	@echo 'Invoking: SysConfig'
-	"C:/ti/ccs2031/ccs/utils/sysconfig_1.25.0/sysconfig_cli.bat" --script "C:/Users/Admin/Desktop/HW_SW_interface_CCS/MSPM0_interface.syscfg" -o "." -s "C:/ti/mspm0_sdk_2_09_00_01/.metadata/product.json" --compiler ticlang
+	"C:/ti/ccs2031/ccs/utils/sysconfig_1.25.0/sysconfig_cli.bat" -s "C:/ti/mspm0_sdk_2_09_00_01/.metadata/product.json" --script "C:/Users/Admin/Desktop/HW_SW_interface_CCS/MSPM0_interface.syscfg" -o "." --compiler ticlang
 	@echo 'Finished building: "$<"'
 	@echo ' '
 
-device_linker.cmd: build-1973321455 ../MSPM0_interface.syscfg
-device.opt: build-1973321455
-device.cmd.genlibs: build-1973321455
-ti_msp_dl_config.c: build-1973321455
-ti_msp_dl_config.h: build-1973321455
-Event.dot: build-1973321455
+device_linker.cmd: build-413538321 ../MSPM0_interface.syscfg
+device.opt: build-413538321
+device.cmd.genlibs: build-413538321
+ti_msp_dl_config.c: build-413538321
+ti_msp_dl_config.h: build-413538321
+Event.dot: build-413538321
 
 %.o: ./%.c $(GEN_OPTS) | $(GEN_FILES) $(GEN_MISC_FILES)
 	@echo 'Building file: "$<"'
