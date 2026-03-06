@@ -273,12 +273,12 @@ extern "C" {
 /* Defines for CAM_SYNC: GPIOB.10 with pinCMx 27 on package pin 62 */
 #define DIGITAL_OUTPUT_PORTB_CAM_SYNC_PIN                       (DL_GPIO_PIN_10)
 #define DIGITAL_OUTPUT_PORTB_CAM_SYNC_IOMUX                      (IOMUX_PINCM27)
-/* Defines for GAUGE_EN: GPIOB.25 with pinCMx 56 on package pin 27 */
-#define DIGITAL_OUTPUT_PORTB_GAUGE_EN_PIN                       (DL_GPIO_PIN_25)
-#define DIGITAL_OUTPUT_PORTB_GAUGE_EN_IOMUX                      (IOMUX_PINCM56)
-/* Defines for LORA_2_CPS: GPIOB.16 with pinCMx 33 on package pin 4 */
-#define DIGITAL_OUTPUT_PORTB_LORA_2_CPS_PIN                     (DL_GPIO_PIN_16)
-#define DIGITAL_OUTPUT_PORTB_LORA_2_CPS_IOMUX                    (IOMUX_PINCM33)
+/* Defines for GAUGE_EN: GPIOB.16 with pinCMx 33 on package pin 4 */
+#define DIGITAL_OUTPUT_PORTB_GAUGE_EN_PIN                       (DL_GPIO_PIN_16)
+#define DIGITAL_OUTPUT_PORTB_GAUGE_EN_IOMUX                      (IOMUX_PINCM33)
+/* Defines for LORA_2_CPS: GPIOB.9 with pinCMx 26 on package pin 61 */
+#define DIGITAL_OUTPUT_PORTB_LORA_2_CPS_PIN                      (DL_GPIO_PIN_9)
+#define DIGITAL_OUTPUT_PORTB_LORA_2_CPS_IOMUX                    (IOMUX_PINCM26)
 /* Port definition for Pin Group DIGITAL_OUTPUT_PORTA */
 #define DIGITAL_OUTPUT_PORTA_PORT                                        (GPIOA)
 

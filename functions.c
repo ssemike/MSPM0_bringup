@@ -343,6 +343,7 @@ void cmd_gauge(char *args)
 
     if (tokenCount == 0) {
         uart_printf("BQ27Z746 Gauge CLI\n"
+                    "  gauge on           - Pulls ENAB_N low\n"
                     "  gauge init           - verify comms, confirm device type\n"
                     "  gauge dump           - read all telemetry registers\n"
                     "  gauge status         - decode BatteryStatus bits\n"
@@ -356,7 +357,21 @@ void cmd_gauge(char *args)
 
     char *sub = tokens[0];
 
-    if (strcmp(sub, "init") == 0) {
+    if (strcmp(sub, "on") == 0) {
+        if (tokenCount < 2) {
+            uart_printf("Usage: gauge on <1|0>\n");
+            return;
+        }
+        int state = atoi(tokens[1]);
+        if (state) {
+            DL_GPIO_setPins(DIGITAL_OUTPUT_PORTB_PORT, DIGITAL_OUTPUT_PORTB_GAUGE_EN_PIN);
+            uart_printf("Gauge ENAB_N Enabled\n");
+        } else {
+            DL_GPIO_clearPins(DIGITAL_OUTPUT_PORTB_PORT, DIGITAL_OUTPUT_PORTB_GAUGE_EN_PIN);
+            uart_printf("Gauge ENAB_N disabled\n");
+        }
+    }
+    else if (strcmp(sub, "init") == 0) {
         uart_printf("Checking for BQ27Z746 on I2C0...\n");
 
         /* Quick bus-level check first */

@@ -112,8 +112,9 @@ GPIO2.associatedPins[11].ioStructure = "SD";
 GPIO2.associatedPins[11].assignedPin = "10";
 GPIO2.associatedPins[11].pin.$assign = "PB10";
 GPIO2.associatedPins[12].$name       = "GAUGE_EN";
+GPIO2.associatedPins[12].pin.$assign = "PB16";
 GPIO2.associatedPins[13].$name       = "LORA_2_CPS";
-GPIO2.associatedPins[13].pin.$assign = "PB16";
+GPIO2.associatedPins[13].pin.$assign = "PB9";
 
 GPIO3.$name                         = "DIGITAL_OUTPUT_PORTA";
 GPIO3.port                          = "PORTA";
@@ -251,5 +252,4 @@ UART2.rxPinConfig.$name                = "ti_driverlib_gpio_GPIOPinGeneric16";
  * re-solve from scratch.
  */
 Board.peripheral.$suggestSolution                   = "DEBUGSS";
-GPIO2.associatedPins[12].pin.$suggestSolution       = "PB25";
 SPI1.DMA_CHANNEL_EVENT1.peripheral.$suggestSolution = "DMA_CH3";
