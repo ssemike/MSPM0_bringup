@@ -63,12 +63,12 @@ bool BQ25628E_Init_Default(void) {
 
 void BQ25628E_UpdateTelemetry(void) {
     // Voltage: 1.99mV per LSB 
-    g_vbat_mV = (uint16_t)(BQ25628E_ReadReg16(BQ25628E_REG_ADC_VBAT) * 2); 
-    g_vsys_mV = (uint16_t)(BQ25628E_ReadReg16(BQ25628E_REG_ADC_VSYS) * 2);
+    g_vbat_mV = (uint16_t)(BQ25628E_ReadReg16(BQ25628E_REG_ADC_VBAT)); 
+    g_vsys_mV = (uint16_t)(BQ25628E_ReadReg16(BQ25628E_REG_ADC_VSYS));
 
     // Current: 2mA LSB for IBUS, 4mA LSB for IBAT 
-    g_ibus_mA = ((int16_t)BQ25628E_ReadReg16(BQ25628E_REG_ADC_IBUS)) * 2;
-    g_ibat_mA = ((int16_t)BQ25628E_ReadReg16(BQ25628E_REG_ADC_IBAT)) * 4;
+    g_ibus_mA = ((int16_t)BQ25628E_ReadReg16(BQ25628E_REG_ADC_IBUS));
+    g_ibat_mA = ((int16_t)BQ25628E_ReadReg16(BQ25628E_REG_ADC_IBAT));
 }
 
 void BQ25628E_PetWatchdog(void) {

@@ -351,7 +351,8 @@ void cmd_gauge(char *args)
                     "  gauge read <reg>     - raw 16-bit register read (hex reg)\n"
                     "  gauge mac <cmd>      - issue MAC command (hex) and dump response\n"
                     "  gauge monitor        - 200ms live telemetry (any key to stop)\n"
-                    "  gauge stop           - stop monitor\n");
+                    "  gauge stop           - stop monitor\n" 
+                    "\n");
         return;
     }
 
@@ -448,8 +449,15 @@ void cmd_gauge(char *args)
             uart_printf("Chem ID          : read failed\n");
 
         uint32_t op_status = 0u;
-        if (BQ27Z746_GetOperationStatus(I2C_0_INST, &op_status))
+        if (BQ27Z746_GetOperationStatus(I2C_0_INST, &op_status)) {
             uart_printf("Operation Status : 0x%08X\n", (unsigned int)op_status);
+            uint32_t raw_status;
+            BQ27Z746_GetOperationStatus(I2C_0_INST, &raw_status);
+            uint16_t statusA = (uint16_t)(raw_status & 0xFFFF);
+            uint16_t statusB = (uint16_t)(raw_status >> 16);
+            uart_printf("Status A: 0x%04X\n", statusA);
+            uart_printf("Status B: 0x%04X\n", statusB);
+            }
         else
             uart_printf("Operation Status : read failed\n");
 
@@ -464,8 +472,12 @@ void cmd_gauge(char *args)
             uart_printf("Gauging Status   : 0x%08X\n", (unsigned int)gauge_status);
         else
             uart_printf("Gauging Status   : read failed\n");
+        uint32_t safety_status = 0u;
+        if (BQ27Z746_GetSafetyStatus(I2C_0_INST, &safety_status))
+            uart_printf("Safety Status   : 0x%08X\n", (unsigned int)safety_status);
+        else
+            uart_printf("Safety Status   : read failed\n");
     }
-
 
     else if (strcmp(sub, "read") == 0 && tokenCount >= 2) {
         uint8_t reg = (uint8_t)strtol(tokens[1], NULL, 16);

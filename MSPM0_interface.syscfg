@@ -57,7 +57,6 @@ GPIO1.associatedPins[3].$name               = "SETUP_INT";
 GPIO1.associatedPins[3].direction           = "INPUT";
 GPIO1.associatedPins[3].assignedPort        = "PORTB";
 GPIO1.associatedPins[3].assignedPin         = "any";
-GPIO1.associatedPins[3].internalResistor    = "PULL_UP";
 GPIO1.associatedPins[3].pin.$assign         = "PB20";
 
 GPIO2.$name                          = "DIGITAL_OUTPUT_PORTB";

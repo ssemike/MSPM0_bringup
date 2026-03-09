@@ -37,11 +37,18 @@
 // ================================================================
 #define BQ27Z746_MAC_DEVICETYPE         0x0001u
 #define BQ27Z746_MAC_FIRMWAREVERSION    0x0002u
+#define BQ27Z746_MAC_HARDWAREVERSION    0x0003u
 #define BQ27Z746_MAC_CHEMID             0x0006u
 #define BQ27Z746_MAC_RESET              0x0012u
 #define BQ27Z746_MAC_OPERATIONSTATUS    0x0054u
 #define BQ27Z746_MAC_CHARGINGSTATUS     0x0055u
 #define BQ27Z746_MAC_GAUGINGSTATUS      0x0056u
+#define BQ27Z746_MAC_SHUTDOWN           0x0010u // Command to enter shutdown
+#define BQ27Z746_MAC_FET_ENABLE         0x0022u // Enable/Disable FET control
+#define BQ27Z746_MAC_SEAL               0x0030u // Seal the gauge for production
+#define BQ27Z746_MAC_SAFETYALERT        0x0050u // Real-time safety alerts
+#define BQ27Z746_MAC_SAFETYSTATUS       0x0051u // Latched safety failures (OC, OV, UT, etc)
+#define BQ27Z746_MAC_DASTATUS1          0x0071u // Cell voltages and power data
 
 // ================================================================
 // BatteryStatus bits (0x0A)
@@ -54,6 +61,15 @@
 #define BQ27Z746_STATUS_TDA     (1u << 11)  // Terminate Discharge Alarm
 #define BQ27Z746_STATUS_OTA     (1u << 12)  // Over Temperature Alarm
 #define BQ27Z746_STATUS_OCA     (1u << 14)  // Over Charge Alarm
+
+// ================================================================
+// SafetyStatus bits (0x0A)
+// ================================================================
+#define BQ27Z746_SAFETY_CUV             (1u << 0)  // Cell Under Voltage
+#define BQ27Z746_SAFETY_COV             (1u << 1)  // Cell Over Voltage
+#define BQ27Z746_SAFETY_OCC             (1u << 2)  // Overcurrent in Charge
+#define BQ27Z746_SAFETY_OCD             (1u << 4)  // Overcurrent in Discharge
+
 
 // ================================================================
 // MAC frame constants
@@ -98,6 +114,7 @@ bool BQ27Z746_GetChemID(I2C_Regs *i2c, uint16_t *pChemID);
 bool BQ27Z746_GetOperationStatus(I2C_Regs *i2c, uint32_t *pStatus);
 bool BQ27Z746_GetChargingStatus(I2C_Regs *i2c, uint16_t *pStatus);
 bool BQ27Z746_GetGaugingStatus(I2C_Regs *i2c, uint32_t *pStatus);
+bool BQ27Z746_GetSafetyStatus(I2C_Regs *i2c, uint32_t *pStatus);
 
 // Live reads
 uint16_t BQ27Z746_ReadVoltage_mV(I2C_Regs *i2c);

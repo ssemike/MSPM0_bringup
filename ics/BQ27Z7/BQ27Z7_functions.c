@@ -189,6 +189,28 @@ bool BQ27Z746_GetGaugingStatus(I2C_Regs *i2c, uint32_t *pStatus)
     return true;
 }
 
+bool BQ27Z746_GetSafetyStatus(I2C_Regs *i2c, uint32_t *pStatus)
+{
+    uint8_t data[BQ27Z746_MAC_DATA_LEN];
+    uint8_t len = 0u;
+    if (!BQ27Z746_MAC_Read(i2c, BQ27Z746_MAC_SAFETYSTATUS, data, &len))
+    {
+        return false;
+    }
+    if (len < 4u) 
+    {
+        return false;
+    }
+
+    // Assemble Little-Endian
+    *pStatus = (uint32_t)(data[0])
+             | ((uint32_t)data[1] << 8u)
+             | ((uint32_t)data[2] << 16u)
+             | ((uint32_t)data[3] << 24u);
+
+    return true;
+}
+
 // ================================================================
 // Init
 // ================================================================

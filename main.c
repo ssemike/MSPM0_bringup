@@ -42,7 +42,7 @@ int main(void)
         if (hall_monitor_active) {
             delay_cycles(monitor_rate * 32000); // Fixed 200ms delay
             
-            uint8_t pin_state = DL_GPIO_readPins(EXTERNAL_INTERRUPT_SETUP_INT_PORT, EXTERNAL_INTERRUPT_SETUP_INT_PIN);
+            uint32_t pin_state = DL_GPIO_readPins(EXTERNAL_INTERRUPT_SETUP_INT_PORT, EXTERNAL_INTERRUPT_SETUP_INT_PIN);
             
             if (pin_state) {
                 uart_printf("SETUP_INT: HIGH (1)\n");
@@ -60,7 +60,7 @@ int main(void)
         if (bq_monitor_active) {
             delay_cycles(monitor_rate * 32000); // 200 ms refresh
 
-            uint8_t charger_int = DL_GPIO_readPins(EXTERNAL_INTERRUPT_CHARGER_INT_PORT, EXTERNAL_INTERRUPT_CHARGER_INT_PIN); 
+            uint32_t charger_int = DL_GPIO_readPins(EXTERNAL_INTERRUPT_CHARGER_INT_PORT, EXTERNAL_INTERRUPT_CHARGER_INT_PIN); 
 
             BQ25628E_UpdateTelemetry();
             uint8_t stat1 = BQ25628E_ReadReg8(BQ25628E_REG_STAT1);
