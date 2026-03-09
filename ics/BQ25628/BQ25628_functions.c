@@ -1,12 +1,16 @@
 #include "BQ25628_functions.h"
 #include "HAL/i2c.h"
 #include <stdbool.h>
+#include <math.h>
 
 /* Internal Telemetry Cache */
 static uint16_t g_vbat_mV = 0;
 static uint16_t g_vsys_mV = 0;
+static uint16_t g_vbus_mV = 0;
 static int16_t  g_ibus_mA = 0;
 static int16_t  g_ibat_mA = 0;
+
+
 
 /* -------------------------------------------------------------------------- */
 /* Low-Level I2C Helpers (unchanged)                                          */
@@ -61,16 +65,35 @@ bool BQ25628E_Init_Default(void) {
 }
 
 
+#include <math.h>  // For roundf if needed; otherwise use casts.
+
 void BQ25628E_UpdateTelemetry(void) {
-    // Voltage: 1.99mV per LSB 
-    g_vbat_mV = (uint16_t)(BQ25628E_ReadReg16(BQ25628E_REG_ADC_VBAT)); 
-    g_vsys_mV = (uint16_t)(BQ25628E_ReadReg16(BQ25628E_REG_ADC_VSYS));
+    uint16_t raw;
 
-    // Current: 2mA LSB for IBUS, 4mA LSB for IBAT 
-    g_ibus_mA = ((int16_t)BQ25628E_ReadReg16(BQ25628E_REG_ADC_IBUS));
-    g_ibat_mA = ((int16_t)BQ25628E_ReadReg16(BQ25628E_REG_ADC_IBAT));
+    raw = BQ25628E_ReadReg16(BQ25628E_REG_ADC_VBAT);
+    uint16_t vbat_code = (raw >> 1) & 0x0FFF;
+    g_vbat_mV = (uint16_t) roundf(vbat_code * 1.99f); 
+
+    raw = BQ25628E_ReadReg16(BQ25628E_REG_ADC_VSYS);
+    uint16_t vsys_code = (raw >> 1) & 0x0FFF;
+    g_vsys_mV = (uint16_t) roundf(vsys_code * 1.99f);
+
+    raw = BQ25628E_ReadReg16(BQ25628E_REG_ADC_VBUS);
+    uint16_t vbus_code = (raw >> 2) & 0x1FFF;
+    g_vbus_mV = (uint16_t) roundf(vbus_code * 3.97f);
+
+    raw = BQ25628E_ReadReg16(BQ25628E_REG_ADC_IBUS);
+    int16_t ibus_code = (int16_t) (raw >> 1);
+    g_ibus_mA = ibus_code * 2;
+
+    raw = BQ25628E_ReadReg16(BQ25628E_REG_ADC_IBAT);
+    if (raw == 0x8000) {
+        g_ibat_mA = 0;
+    } else {
+        int16_t ibat_code = (int16_t) (raw >> 2);
+        g_ibat_mA = ibat_code * 4;
+    }
 }
-
 void BQ25628E_PetWatchdog(void) {
     BQ25628E_UpdateBits8(BQ25628E_REG_CTRL0, BQ25628E_CTRL0_WD_RST, BQ25628E_CTRL0_WD_RST);
 }
@@ -160,5 +183,6 @@ void BQ25628E_Set_PeakDischarge_6A(void) {
 /* --- Getters --- */
 uint16_t BQ25628E_Get_VBAT_mV(void) { return g_vbat_mV; }
 uint16_t BQ25628E_Get_VSYS_mV(void) { return g_vsys_mV; }
+uint16_t BQ25628E_Get_VBUS_mV(void) { return g_vbus_mV; }
 int16_t  BQ25628E_Get_IBUS_mA(void) { return g_ibus_mA; }
 int16_t  BQ25628E_Get_IBAT_mA(void) { return g_ibat_mA; }

@@ -79,10 +79,10 @@ bool BQ27Z746_MAC_Read(I2C_Regs *i2c, uint16_t cmd, uint8_t *pData, uint8_t *pLe
     /* Step 4: verify checksum
      * checksum = 0xFF - (sum of bytes [0..33])
      * byte [34] holds the checksum written by the gauge */
+    uint8_t num_bytes = frame[35] - 2u;  // checksum covers (length - 2) bytes
     uint8_t sum = 0u;
-    for (uint8_t i = 0u; i < (BQ27Z746_MAC_FRAME_LEN - 2u); i++)
+    for (uint8_t i = 0u; i < num_bytes; i++)
         sum += frame[i];
-
     uint8_t expected_checksum = (uint8_t)(0xFFu - sum);
     if (expected_checksum != frame[34])
         return false;
@@ -112,6 +112,46 @@ bool BQ27Z746_MAC_Send(I2C_Regs *i2c, uint16_t cmd)
     cmd_bytes[1] = (uint8_t)((cmd >> 8u) & 0xFFu);
     return (gauge_write(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, cmd_bytes, 2) == 2);
 }
+
+/*
+ * BQ27Z746_MAC_Write
+ *
+ * Protocol (for data-bearing MAC commands):
+ * 1. Build frame: [cmd_lo, cmd_hi, data..., checksum, length]
+ * 2. Checksum = 0xFF - sum(cmd bytes + data bytes)
+ * 3. Length   = 2 (cmd) + data_len + 2 (checksum + length field)
+ * 4. Write entire frame to ALTMANUFACTURERACCESS (0x3E)
+ *
+ * Note: For command-only operations use BQ27Z746_MAC_Send instead.
+ */
+bool BQ27Z746_MAC_Write(I2C_Regs *i2c, uint16_t cmd, uint8_t *pData, uint8_t data_len)
+{
+    if (data_len == 0u || data_len > BQ27Z746_MAC_DATA_LEN)
+        return false;
+
+    uint8_t frame[BQ27Z746_MAC_FRAME_LEN];
+    uint8_t frame_idx = 0u;
+
+    /* Bytes [0..1]: command word little-endian */
+    frame[frame_idx++] = (uint8_t)(cmd & 0xFFu);
+    frame[frame_idx++] = (uint8_t)((cmd >> 8u) & 0xFFu);
+
+    /* Bytes [2..2+data_len]: payload */
+    for (uint8_t i = 0u; i < data_len; i++)
+        frame[frame_idx++] = pData[i];
+
+    /* Checksum: 0xFF - sum(cmd bytes + data bytes) */
+    uint8_t sum = 0u;
+    for (uint8_t i = 0u; i < frame_idx; i++)
+        sum += frame[i];
+    frame[frame_idx++] = (uint8_t)(0xFFu - sum);
+
+    /* Length: cmd(2) + data + checksum(1) + length(1) */
+    frame[frame_idx++] = (uint8_t)(2u + data_len + 2u);
+
+    return (gauge_write(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, frame, frame_idx) == frame_idx);
+}
+
 
 // ================================================================
 // Diagnostic reads (MAC-based)
@@ -164,14 +204,17 @@ bool BQ27Z746_GetOperationStatus(I2C_Regs *i2c, uint32_t *pStatus)
     return true;
 }
 
-bool BQ27Z746_GetChargingStatus(I2C_Regs *i2c, uint16_t *pStatus)
+bool BQ27Z746_GetChargingStatus(I2C_Regs *i2c, uint8_t *pTempRange, uint16_t *pChgStatus)
 {
     uint8_t data[BQ27Z746_MAC_DATA_LEN];
     uint8_t len = 0u;
+
     if (!BQ27Z746_MAC_Read(i2c, BQ27Z746_MAC_CHARGINGSTATUS, data, &len))
         return false;
-    if (len < 2u) return false;
-    *pStatus = (uint16_t)(data[0] | ((uint16_t)data[1] << 8u));
+    if (len < 3u) return false;
+    *pTempRange = data[0];
+    *pChgStatus = (uint16_t)(data[1] | ((uint16_t)data[2] << 8u));
+
     return true;
 }
 
@@ -363,4 +406,72 @@ bool BQ27Z746_LoadGoldenImage(I2C_Regs *i2c, const char *fs_string)
 {
     char *result = gauge_execute_fs(i2c, (char *)fs_string);
     return (result == NULL || *result == '\0');
+}
+
+
+#define FET_OPTIONS_ADDR 0x45C0
+#define DF_FRAME_SIZE    34  
+
+bool BQ27Z746_SetUTFET_Direct(I2C_Regs *i2c, bool enable)
+{
+    uint8_t tx_addr[2];
+    uint8_t rx_frame[DF_FRAME_SIZE];
+
+    // 1. Point gauge to DF address
+    tx_addr[0] = (uint8_t)(FET_OPTIONS_ADDR & 0xFF);
+    tx_addr[1] = (uint8_t)((FET_OPTIONS_ADDR >> 8) & 0xFF);
+
+    if (gauge_write(i2c, 0x3E, tx_addr, 2) != 2)
+        return false;
+
+    DL_Common_delayCycles(64000); // ~2ms at 32MHz
+
+    // 2. Read DF block (34 bytes: 2 addr + 32 data)
+    if (gauge_read(i2c, 0x3E, rx_frame, DF_FRAME_SIZE) != DF_FRAME_SIZE)
+        return false;
+
+    // 3. Extract FET Options (bytes [2..3])
+    uint16_t current_val = (uint16_t)rx_frame[2] | ((uint16_t)rx_frame[3] << 8);
+
+    // 4. Modify UTFET (bit 1)
+    if (enable)
+        current_val |= (1u << 1);
+    else
+        current_val &= ~(1u << 1);
+
+    // 5. Write back: addr + modified data
+    uint8_t write_buffer[4];
+    write_buffer[0] = tx_addr[0];
+    write_buffer[1] = tx_addr[1];
+    write_buffer[2] = (uint8_t)(current_val & 0xFF);
+    write_buffer[3] = (uint8_t)(current_val >> 8);
+
+    return (gauge_write(i2c, 0x3E, write_buffer, 4) == 4);
+}
+
+bool BQ27Z746_GetFETOptions(I2C_Regs *i2c, uint16_t *pOutValue)
+{
+    uint8_t tx_addr[2];
+    uint8_t rx_frame[36];
+
+    // 1. Point the gauge to the DF address
+    tx_addr[0] = (uint8_t)(FET_OPTIONS_ADDR & 0xFF);
+    tx_addr[1] = (uint8_t)((FET_OPTIONS_ADDR >> 8) & 0xFF);
+
+    if (gauge_write(i2c, 0x3E, tx_addr, 2) != 2)
+        return false;
+
+    DL_Common_delayCycles(64000); // ~2ms at 32MHz
+
+    // 2. Read the DF block
+    // We expect the gauge to return the address [Addr_Lo, Addr_Hi] 
+    // followed by the data [Data_Lo, Data_Hi]
+    if (gauge_read(i2c, 0x3E, rx_frame, 36) != 36)
+        return false;
+
+    // 3. Extract the 16-bit value from the rx_frame
+    // rx_frame[0..1] is the address we wrote, rx_frame[2..3] is the data
+    *pOutValue = (uint16_t)rx_frame[2] | ((uint16_t)rx_frame[3] << 8);
+
+    return true;
 }

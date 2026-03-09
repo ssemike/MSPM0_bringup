@@ -63,12 +63,25 @@
 #define BQ27Z746_STATUS_OCA     (1u << 14)  // Over Charge Alarm
 
 // ================================================================
-// SafetyStatus bits (0x0A)
+// OperationStatus bits (0x0054)
 // ================================================================
-#define BQ27Z746_SAFETY_CUV             (1u << 0)  // Cell Under Voltage
-#define BQ27Z746_SAFETY_COV             (1u << 1)  // Cell Over Voltage
-#define BQ27Z746_SAFETY_OCC             (1u << 2)  // Overcurrent in Charge
-#define BQ27Z746_SAFETY_OCD             (1u << 4)  // Overcurrent in Discharge
+// Temp Range Masks (Byte 0)
+#define BQ27Z746_TEMP_OT  (1u << 6) // Overtemperature
+#define BQ27Z746_TEMP_HT  (1u << 5) // High temperature
+#define BQ27Z746_TEMP_STH (1u << 4) // Standard high
+#define BQ27Z746_TEMP_RT  (1u << 3) // Recommended
+#define BQ27Z746_TEMP_STL (1u << 2) // Standard low
+#define BQ27Z746_TEMP_LT  (1u << 1) // Low temperature
+#define BQ27Z746_TEMP_UT  (1u << 0) // Undertemperature
+
+// Charging Status Masks (16-bit word)
+#define BQ27Z746_CHG_VCT  (1u << 7) // Termination
+#define BQ27Z746_CHG_SU   (1u << 5) // Suspend
+#define BQ27Z746_CHG_IN   (1u << 4) // Inhibit
+#define BQ27Z746_CHG_HV   (1u << 3) // High voltage region
+#define BQ27Z746_CHG_MV   (1u << 2) // Mid voltage region
+#define BQ27Z746_CHG_LV   (1u << 1) // Low voltage region
+#define BQ27Z746_CHG_PV   (1u << 0) // Precharge region
 
 
 // ================================================================
@@ -106,13 +119,14 @@ bool BQ27Z746_Init(I2C_Regs *i2c);
 // MAC layer
 bool BQ27Z746_MAC_Read(I2C_Regs *i2c, uint16_t cmd, uint8_t *pData, uint8_t *pLen);
 bool BQ27Z746_MAC_Send(I2C_Regs *i2c, uint16_t cmd);
+bool BQ27Z746_MAC_Write(I2C_Regs *i2c, uint16_t cmd, uint8_t *pData, uint8_t data_len);
 
 // Diagnostic MAC reads
 bool BQ27Z746_GetDeviceType(I2C_Regs *i2c, uint16_t *pType);
 bool BQ27Z746_GetFirmwareVersion(I2C_Regs *i2c, uint16_t *pVersion);
 bool BQ27Z746_GetChemID(I2C_Regs *i2c, uint16_t *pChemID);
 bool BQ27Z746_GetOperationStatus(I2C_Regs *i2c, uint32_t *pStatus);
-bool BQ27Z746_GetChargingStatus(I2C_Regs *i2c, uint16_t *pStatus);
+bool BQ27Z746_GetChargingStatus(I2C_Regs *i2c, uint8_t *pTempRange, uint16_t *pChgStatus);
 bool BQ27Z746_GetGaugingStatus(I2C_Regs *i2c, uint32_t *pStatus);
 bool BQ27Z746_GetSafetyStatus(I2C_Regs *i2c, uint32_t *pStatus);
 
@@ -158,5 +172,10 @@ uint16_t BQ27Z746_Get_TimeToEmpty_min(void);
 uint16_t BQ27Z746_Get_TimeToFull_min(void);
 int16_t  BQ27Z746_Get_AvgPower_mW(void);
 int16_t  BQ27Z746_Get_InternalTemp_C(void);
+
+
+
+bool BQ27Z746_SetUTFET_Direct(I2C_Regs *i2c, bool enable);
+bool BQ27Z746_GetFETOptions(I2C_Regs *i2c, uint16_t *pOutValue);
 
 #endif

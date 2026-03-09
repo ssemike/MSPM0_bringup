@@ -343,16 +343,18 @@ void cmd_gauge(char *args)
 
     if (tokenCount == 0) {
         uart_printf("BQ27Z746 Gauge CLI\n"
-                    "  gauge on           - Pulls ENAB_N low\n"
-                    "  gauge init           - verify comms, confirm device type\n"
-                    "  gauge dump           - read all telemetry registers\n"
-                    "  gauge status         - decode BatteryStatus bits\n"
-                    "  gauge info           - device type, FW version, ChemID, op/chg/gauge status\n"
-                    "  gauge read <reg>     - raw 16-bit register read (hex reg)\n"
-                    "  gauge mac <cmd>      - issue MAC command (hex) and dump response\n"
-                    "  gauge monitor        - 200ms live telemetry (any key to stop)\n"
-                    "  gauge stop           - stop monitor\n" 
-                    "\n");
+            "  gauge on <1|0>       - Pulls ENAB_N low/high\n"
+            "  gauge init           - verify comms, confirm device type\n"
+            "  gauge dump           - read all telemetry registers\n"
+            "  gauge status         - decode BatteryStatus bits\n"
+            "  gauge info           - device type, FW version, ChemID\n"
+            "  gauge read <reg>     - raw 16-bit register read\n"
+            "  gauge mac <cmd>      - issue MAC command\n"
+            "  gauge fet            - read FET Options DF (0x45C0)\n"
+            "  gauge utfet <0|1>    - disable/enable UTFET bit\n"
+            "  gauge monitor        - 200ms live telemetry\n"
+            "  gauge stop           - stop monitor\n"
+            "\n");
         return;
     }
 
@@ -461,17 +463,24 @@ void cmd_gauge(char *args)
         else
             uart_printf("Operation Status : read failed\n");
 
-        uint16_t chg_status = 0u;
-        if (BQ27Z746_GetChargingStatus(I2C_0_INST, &chg_status))
-            uart_printf("Charging Status  : 0x%04X\n", chg_status);
-        else
-            uart_printf("Charging Status  : read failed\n");
+        uint8_t tempRange;
+        uint16_t chgStatus;
+        if (BQ27Z746_GetChargingStatus(I2C_0_INST, &tempRange, &chgStatus)) {
+            uart_printf("TempRange: 0x%02X (OT:%d, HT:%d)\n", 
+                        tempRange, (tempRange & BQ27Z746_TEMP_OT)!=0, (tempRange & BQ27Z746_TEMP_HT)!=0);
+            uart_printf("ChgStatus: 0x%04X (SU:%d, IN:%d, VCT:%d)\n", 
+                        chgStatus, (chgStatus & BQ27Z746_CHG_SU)!=0, 
+                        (chgStatus & BQ27Z746_CHG_IN)!=0, (chgStatus & BQ27Z746_CHG_VCT)!=0);
+        } else {
+            uart_printf("Error: Failed to read Charging Status\n");
+        }
 
-        uint32_t gauge_status = 0u;
-        if (BQ27Z746_GetGaugingStatus(I2C_0_INST, &gauge_status))
-            uart_printf("Gauging Status   : 0x%08X\n", (unsigned int)gauge_status);
-        else
-            uart_printf("Gauging Status   : read failed\n");
+        // uint32_t gauge_status = 0u;
+        // if (BQ27Z746_GetGaugingStatus(I2C_0_INST, &gauge_status))
+        //     uart_printf("Gauging Status   : 0x%08X\n", (unsigned int)gauge_status);
+        // else
+        //     uart_printf("Gauging Status   : read failed\n");
+        
         uint32_t safety_status = 0u;
         if (BQ27Z746_GetSafetyStatus(I2C_0_INST, &safety_status))
             uart_printf("Safety Status   : 0x%08X\n", (unsigned int)safety_status);
@@ -526,7 +535,45 @@ void cmd_gauge(char *args)
         uart_printf("Gauge monitor stopped\n");
     }
 
+    else if (strcmp(sub, "fet") == 0) {
+
+    uint16_t fetOptions = 0;
+
+    if (!BQ27Z746_GetFETOptions(I2C_0_INST, &fetOptions)) {
+        uart_printf("ERROR: Failed to read FET Options\n");
+        return;
+    }
+
+    uart_printf("FET Options (0x45C0): 0x%04X\n", fetOptions);
+
+    uart_printf("  UTFET : %d\n", (fetOptions & (1 << 1)) != 0);
+}
+else if (strcmp(sub, "utfet") == 0) {
+
+    if (tokenCount < 2) {
+        uart_printf("Usage: gauge utfet <0|1>\n");
+        return;
+    }
+
+    bool enable = atoi(tokens[1]) ? true : false;
+
+    if (!BQ27Z746_SetUTFET_Direct(I2C_0_INST, enable)) {
+        uart_printf("ERROR: Failed to write UTFET\n");
+        return;
+    }
+
+    uart_printf("UTFET %s\n", enable ? "ENABLED" : "DISABLED");
+
+    /* Verify write */
+    uint16_t verify;
+    if (BQ27Z746_GetFETOptions(I2C_0_INST, &verify)) {
+        uart_printf("FET Options now: 0x%04X\n", verify);
+    }
+    
     else {
         uart_printf("Unknown gauge sub-command. Type 'gauge' for help.\n");
     }
+}
+
+
 }

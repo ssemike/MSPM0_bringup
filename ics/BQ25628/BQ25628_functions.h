@@ -86,6 +86,7 @@ void BQ25628E_PetWatchdog(void);
 /* Getters (unchanged) */
 uint16_t BQ25628E_Get_VBAT_mV(void);
 uint16_t BQ25628E_Get_VSYS_mV(void);
+uint16_t BQ25628E_Get_VBUS_mV(void);
 int16_t  BQ25628E_Get_IBUS_mA(void);
 int16_t  BQ25628E_Get_IBAT_mA(void);
 
