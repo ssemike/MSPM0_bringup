@@ -266,6 +266,9 @@ bool BQ27Z746_Init(I2C_Regs *i2c)
     if (!BQ27Z746_GetDeviceType(i2c, &device_type))
         return false;
 
+    if (!BQ27Z746_UseInternalTempOnly(i2c))
+        return false;
+
     return true;
 }
 
@@ -424,54 +427,146 @@ bool BQ27Z746_SetUTFET_Direct(I2C_Regs *i2c, bool enable)
     if (gauge_write(i2c, 0x3E, tx_addr, 2) != 2)
         return false;
 
-    DL_Common_delayCycles(64000); // ~2ms at 32MHz
+    DL_Common_delayCycles(64000);
 
-    // 2. Read DF block (34 bytes: 2 addr + 32 data)
+    // 2. Read current DF block
     if (gauge_read(i2c, 0x3E, rx_frame, DF_FRAME_SIZE) != DF_FRAME_SIZE)
         return false;
 
-    // 3. Extract FET Options (bytes [2..3])
+    // 3. Extract and modify UTFET (bit 1)
     uint16_t current_val = (uint16_t)rx_frame[2] | ((uint16_t)rx_frame[3] << 8);
 
-    // 4. Modify UTFET (bit 1)
     if (enable)
-        current_val |= (1u << 1);
+        current_val |=  (1u << 1);
     else
         current_val &= ~(1u << 1);
 
-    // 5. Write back: addr + modified data
+    // 4. Write back
     uint8_t write_buffer[4];
     write_buffer[0] = tx_addr[0];
     write_buffer[1] = tx_addr[1];
     write_buffer[2] = (uint8_t)(current_val & 0xFF);
     write_buffer[3] = (uint8_t)(current_val >> 8);
 
-    return (gauge_write(i2c, 0x3E, write_buffer, 4) == 4);
+    if (gauge_write(i2c, 0x3E, write_buffer, 4) != 4)
+        return false;
+
+    DL_Common_delayCycles(64000);
+
+    // 5. Re-read and verify
+    if (gauge_write(i2c, 0x3E, tx_addr, 2) != 2)
+        return false;
+
+    DL_Common_delayCycles(64000);
+
+    uint8_t verify_frame[DF_FRAME_SIZE];
+    if (gauge_read(i2c, 0x3E, verify_frame, DF_FRAME_SIZE) != DF_FRAME_SIZE)
+        return false;
+
+    uint16_t verify_val = (uint16_t)verify_frame[2] | ((uint16_t)verify_frame[3] << 8);
+
+    return (verify_val == current_val);
 }
 
 bool BQ27Z746_GetFETOptions(I2C_Regs *i2c, uint16_t *pOutValue)
 {
     uint8_t tx_addr[2];
     uint8_t rx_frame[36];
-
     // 1. Point the gauge to the DF address
     tx_addr[0] = (uint8_t)(FET_OPTIONS_ADDR & 0xFF);
     tx_addr[1] = (uint8_t)((FET_OPTIONS_ADDR >> 8) & 0xFF);
 
     if (gauge_write(i2c, 0x3E, tx_addr, 2) != 2)
         return false;
-
     DL_Common_delayCycles(64000); // ~2ms at 32MHz
-
-    // 2. Read the DF block
-    // We expect the gauge to return the address [Addr_Lo, Addr_Hi] 
-    // followed by the data [Data_Lo, Data_Hi]
     if (gauge_read(i2c, 0x3E, rx_frame, 36) != 36)
         return false;
-
-    // 3. Extract the 16-bit value from the rx_frame
-    // rx_frame[0..1] is the address we wrote, rx_frame[2..3] is the data
     *pOutValue = (uint16_t)rx_frame[2] | ((uint16_t)rx_frame[3] << 8);
+
+    return true;
+}
+
+
+#define TEMP_CONFIG_ADDR  0x46B1 
+
+bool BQ27Z746_SetTempSensorConfig(I2C_Regs *i2c, bool enable_internal, bool enable_ts1)
+{
+    uint8_t tx_addr[2];
+    uint8_t rx_frame[DF_FRAME_SIZE];
+
+    tx_addr[0] = (uint8_t)(TEMP_CONFIG_ADDR & 0xFF);
+    tx_addr[1] = (uint8_t)((TEMP_CONFIG_ADDR >> 8) & 0xFF);
+
+    // 1. Point gauge to DF address
+    if (gauge_write(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, tx_addr, 2) != 2)
+        return false;
+
+    DL_Common_delayCycles(64000);
+
+    // 2. Read current value
+    if (gauge_read(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, rx_frame, DF_FRAME_SIZE) != DF_FRAME_SIZE)
+        return false;
+
+    // 3. Modify bits
+    uint8_t temp_enable = rx_frame[2];
+
+    if (enable_internal)
+        temp_enable |=  (1u << 0);
+    else
+        temp_enable &= ~(1u << 0);
+
+    if (enable_ts1)
+        temp_enable |=  (1u << 1);
+    else
+        temp_enable &= ~(1u << 1);
+
+    // 4. Write back
+    uint8_t write_buf[3];
+    write_buf[0] = tx_addr[0];
+    write_buf[1] = tx_addr[1];
+    write_buf[2] = temp_enable;
+
+    if (gauge_write(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, write_buf, 3) != 3)
+        return false;
+
+    DL_Common_delayCycles(64000);
+
+    // 5. Re-read and verify
+    if (gauge_write(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, tx_addr, 2) != 2)
+        return false;
+
+    DL_Common_delayCycles(64000);
+
+    uint8_t verify_frame[DF_FRAME_SIZE];
+    if (gauge_read(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, verify_frame, DF_FRAME_SIZE) != DF_FRAME_SIZE)
+        return false;
+
+    return (verify_frame[2] == temp_enable);
+}
+
+bool BQ27Z746_UseInternalTempOnly(I2C_Regs *i2c)
+{
+    return BQ27Z746_SetTempSensorConfig(i2c, true, false);
+}
+
+bool BQ27Z746_GetTempConfig(I2C_Regs *i2c, uint8_t *pTempEnable)
+{
+    uint8_t tx_addr[2];
+    uint8_t rx_frame[DF_FRAME_SIZE];
+
+    if (pTempEnable == NULL)
+        return false;
+    tx_addr[0] = (uint8_t)(TEMP_CONFIG_ADDR & 0xFF);
+    tx_addr[1] = (uint8_t)((TEMP_CONFIG_ADDR >> 8) & 0xFF);
+
+    if (gauge_write(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, tx_addr, 2) != 2)
+        return false;
+
+    DL_Common_delayCycles(64000); /* ~2 ms at 32 MHz */
+    
+    if (gauge_read(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, rx_frame, DF_FRAME_SIZE) != DF_FRAME_SIZE)
+        return false;
+    *pTempEnable = rx_frame[2];
 
     return true;
 }

@@ -177,5 +177,7 @@ int16_t  BQ27Z746_Get_InternalTemp_C(void);
 
 bool BQ27Z746_SetUTFET_Direct(I2C_Regs *i2c, bool enable);
 bool BQ27Z746_GetFETOptions(I2C_Regs *i2c, uint16_t *pOutValue);
+bool BQ27Z746_GetTempConfig(I2C_Regs *i2c, uint8_t *pTempEnable);
+bool BQ27Z746_UseInternalTempOnly(I2C_Regs *i2c);
 
 #endif

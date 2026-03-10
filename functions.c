@@ -385,7 +385,7 @@ void cmd_gauge(char *args)
         }
 
         if (!BQ27Z746_Init(I2C_0_INST)) {
-            uart_printf("ERROR: Init failed — device type mismatch or comms error\n");
+            uart_printf("ERROR: Init failed — failed init for (TS)\n");
             return;
         }
 
@@ -466,26 +466,27 @@ void cmd_gauge(char *args)
         uint8_t tempRange;
         uint16_t chgStatus;
         if (BQ27Z746_GetChargingStatus(I2C_0_INST, &tempRange, &chgStatus)) {
-            uart_printf("TempRange: 0x%02X (OT:%d, HT:%d)\n", 
-                        tempRange, (tempRange & BQ27Z746_TEMP_OT)!=0, (tempRange & BQ27Z746_TEMP_HT)!=0);
-            uart_printf("ChgStatus: 0x%04X (SU:%d, IN:%d, VCT:%d)\n", 
-                        chgStatus, (chgStatus & BQ27Z746_CHG_SU)!=0, 
-                        (chgStatus & BQ27Z746_CHG_IN)!=0, (chgStatus & BQ27Z746_CHG_VCT)!=0);
+            uart_printf("TempRange: 0x%02X\n", tempRange);
+            uart_printf("ChgStatus: 0x%04X\n", chgStatus);
         } else {
             uart_printf("Error: Failed to read Charging Status\n");
         }
-
-        // uint32_t gauge_status = 0u;
-        // if (BQ27Z746_GetGaugingStatus(I2C_0_INST, &gauge_status))
-        //     uart_printf("Gauging Status   : 0x%08X\n", (unsigned int)gauge_status);
-        // else
-        //     uart_printf("Gauging Status   : read failed\n");
-        
         uint32_t safety_status = 0u;
         if (BQ27Z746_GetSafetyStatus(I2C_0_INST, &safety_status))
             uart_printf("Safety Status   : 0x%08X\n", (unsigned int)safety_status);
         else
             uart_printf("Safety Status   : read failed\n");
+
+
+        uint8_t tempCfg = 0u;
+        if (BQ27Z746_GetTempConfig(I2C_0_INST, &tempCfg)) {
+            uart_printf("Temp Config (0x45F6): 0x%02X\n", tempCfg);
+            uart_printf("  TSInt (internal)   : %s\n", (tempCfg & (1u << 0)) ? "ENABLED" : "disabled");
+            uart_printf("  TS1   (external)   : %s\n", (tempCfg & (1u << 1)) ? "ENABLED" : "disabled");
+            uart_printf("  TS2   (GPO pin)    : %s\n", (tempCfg & (1u << 2)) ? "ENABLED" : "disabled");
+        } else {
+            uart_printf("Temp Config          : read failed\n");
+        }
     }
 
     else if (strcmp(sub, "read") == 0 && tokenCount >= 2) {
