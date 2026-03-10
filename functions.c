@@ -354,6 +354,7 @@ void cmd_gauge(char *args)
             "  gauge utfet <0|1>    - disable/enable UTFET bit\n"
             "  gauge monitor        - 200ms live telemetry\n"
             "  gauge stop           - stop monitor\n"
+            "  gauge reset           - reset gauge\n"
             "\n");
         return;
     }
@@ -575,6 +576,13 @@ else if (strcmp(sub, "utfet") == 0) {
         uart_printf("Unknown gauge sub-command. Type 'gauge' for help.\n");
     }
 }
-
+else if (strcmp(sub, "reset") == 0) {
+    uart_printf("Resetting BQ27Z746...\n");
+    if (!BQ27Z746_MAC_Send(I2C_0_INST, 0x0041)) {
+        uart_printf("ERROR: Reset command failed\n");
+        return;
+    }
+    uart_printf("Reset sent\n");
+}
 
 }
