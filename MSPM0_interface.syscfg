@@ -125,6 +125,7 @@ GPIO3.associatedPins[0].pin.$assign  = "PA22";
 GPIO3.associatedPins[1].$name        = "FRAM_HOLD_N";
 GPIO3.associatedPins[1].assignedPin  = "9";
 GPIO3.associatedPins[1].ioStructure  = "HS";
+GPIO3.associatedPins[1].initialValue = "SET";
 GPIO3.associatedPins[1].pin.$assign  = "PA9";
 GPIO3.associatedPins[2].$name        = "LORA_2_RST";
 GPIO3.associatedPins[2].pin.$assign  = "PA16";
@@ -132,6 +133,7 @@ GPIO3.associatedPins[3].$name        = "HALL_3V";
 GPIO3.associatedPins[3].pin.$assign  = "PA7";
 GPIO3.associatedPins[4].$name        = "CHIP_S_FRAM";
 GPIO3.associatedPins[4].initialValue = "SET";
+GPIO3.associatedPins[4].pin.$assign  = "PA8";
 
 I2C1.$name                         = "I2C_0";
 I2C1.basicEnableController         = true;
@@ -170,7 +172,6 @@ SPI1.chipSelect                            = ["1"];
 SPI1.sclkPinConfig.$name                   = "ti_driverlib_gpio_GPIOPinGeneric0";
 SPI1.mosiPinConfig.$name                   = "ti_driverlib_gpio_GPIOPinGeneric1";
 SPI1.misoPinConfig.$name                   = "ti_driverlib_gpio_GPIOPinGeneric2";
-SPI1.cs1PinConfig.$name                    = "ti_driverlib_gpio_GPIOPinGeneric4";
 SPI1.DMA_CHANNEL_EVENT1.$name              = "DMA_CH3";
 SPI1.DMA_CHANNEL_EVENT1.addressMode        = "f2b";
 SPI1.DMA_CHANNEL_EVENT1.srcLength          = "BYTE";
@@ -185,6 +186,7 @@ SPI1.peripheral.sclkPin.$assign            = "PA12";
 SPI1.peripheral.mosiPin.$assign            = "PA14";
 SPI1.peripheral.misoPin.$assign            = "PA13";
 SPI1.peripheral.cs1Pin.$assign             = "PB24";
+SPI1.cs1PinConfig.$name                    = "ti_driverlib_gpio_GPIOPinGeneric4";
 
 SPI2.$name                                 = "SPI_1";
 SPI2.peripheralChipSelect                  = "1";
@@ -251,5 +253,4 @@ UART2.rxPinConfig.$name                = "ti_driverlib_gpio_GPIOPinGeneric16";
  * re-solve from scratch.
  */
 Board.peripheral.$suggestSolution                   = "DEBUGSS";
-GPIO3.associatedPins[4].pin.$suggestSolution        = "PA18";
 SPI1.DMA_CHANNEL_EVENT1.peripheral.$suggestSolution = "DMA_CH3";

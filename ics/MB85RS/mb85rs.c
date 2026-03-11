@@ -288,8 +288,8 @@ MB85RS_Error MB85RS_Read(MB85RS_Handle *fram,
         return MB85RS_ERR_PARAM;
     }
 
-    uint8_t tx[512];
-    uint8_t rx[512];
+    uint8_t tx[128];
+    uint8_t rx[128];
 
     memset(tx, 0x00, total);
     tx[0] = MB85RS_CMD_READ;

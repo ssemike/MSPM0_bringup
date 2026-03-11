@@ -290,9 +290,9 @@ extern "C" {
 /* Defines for HALL_3V: GPIOA.7 with pinCMx 14 on package pin 49 */
 #define DIGITAL_OUTPUT_PORTA_HALL_3V_PIN                         (DL_GPIO_PIN_7)
 #define DIGITAL_OUTPUT_PORTA_HALL_3V_IOMUX                       (IOMUX_PINCM14)
-/* Defines for CHIP_S_FRAM: GPIOA.18 with pinCMx 40 on package pin 11 */
-#define DIGITAL_OUTPUT_PORTA_CHIP_S_FRAM_PIN                    (DL_GPIO_PIN_18)
-#define DIGITAL_OUTPUT_PORTA_CHIP_S_FRAM_IOMUX                   (IOMUX_PINCM40)
+/* Defines for CHIP_S_FRAM: GPIOA.8 with pinCMx 19 on package pin 54 */
+#define DIGITAL_OUTPUT_PORTA_CHIP_S_FRAM_PIN                     (DL_GPIO_PIN_8)
+#define DIGITAL_OUTPUT_PORTA_CHIP_S_FRAM_IOMUX                   (IOMUX_PINCM19)
 
 
 /* clang-format on */
