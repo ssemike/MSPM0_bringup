@@ -6,6 +6,8 @@
 #include "ics/BQ25628/BQ25628_functions.h"
 #include "HAL/spi_master.h"
 #include "ics/BQ27Z7/BQ27Z7_functions.h"
+#include "HAL/spi_mem.h"
+#include "ics/MB85RS/mb85rs.h"
 
 extern volatile bool gauge_monitor_active;
 extern volatile bool bq_monitor_active; 
@@ -585,4 +587,182 @@ else if (strcmp(sub, "reset") == 0) {
     uart_printf("Reset sent\n");
 }
 
+}
+
+MB85RS_Handle fram;
+
+void cmd_fram(char *args)
+{
+    char *tokens[11];   /* sub + addr + up to 8 data bytes + spare */
+    int   tokenCount = CLI_Tokenize(args, tokens, 11);
+
+    if (tokenCount == 0) {
+        uart_printf("MB85RS2MTA FRAM CLI\n"
+                    "  fram init               - init driver and verify device ID\n"
+                    "  fram id                 - read raw 4-byte device ID\n"
+                    "  fram status             - decode status register\n"
+                    "  fram read  <addr> <len> - hex dump (hex values, 0x prefix optional)\n"
+                    "  fram write <addr> <b0> [b1..b7] - write bytes\n");
+        return;
+    }
+
+    char *sub = tokens[0];
+
+    /* ------------------------------------------------------------------ */
+    /* fram init                                                            */
+    /* ------------------------------------------------------------------ */
+    if (strcmp(sub, "init") == 0) {
+        uart_printf("Initialising FRAM...\n");
+
+        MB85RS_Error err = MB85RS_Init(&fram, &framSpi);
+
+        if (err == MB85RS_OK) {
+            uart_printf("FRAM OK - MB85RS2MTA found and confirmed\n");
+        } else if (err == MB85RS_ERR_DEVICE_ID) {
+            uart_printf("ERROR: Device ID mismatch - wrong device or wiring issue\n");
+        } else {
+            uart_printf("ERROR: Init failed (code %d)\n", (int)err);
+        }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* fram id                                                              */
+    /* ------------------------------------------------------------------ */
+    else if (strcmp(sub, "id") == 0) {
+        uint8_t tx[MB85RS_RDID_LEN];
+        uint8_t rx[MB85RS_RDID_LEN];
+
+        memset(tx, 0x00, sizeof(tx));
+        tx[0] = MB85RS_CMD_RDID;
+
+        SPI_Memory_CS_Assert(fram.spi);
+        SPI_Memory_Arm(fram.spi, tx, rx, MB85RS_RDID_LEN, SPI_MEM_MODE_FULL_DUPLEX);
+
+        if (!SPI_Memory_Wait(fram.spi)) {
+            SPI_Memory_CS_Deassert(fram.spi);
+            uart_printf("ERROR: SPI transfer failed\n");
+            return;
+        }
+
+        SPI_Memory_CS_Deassert(fram.spi);
+
+        /* rx[0] is garbage (clocked during op-code byte) */
+        uart_printf("Device ID raw bytes:\n");
+        uart_printf("  [0] Manufacturer : 0x%02X  %s\n",
+                    rx[1], (rx[1] == MB85RS_ID_MANUFACTURER) ? "(OK)" : "(MISMATCH)");
+        uart_printf("  [1] Continuation : 0x%02X  %s\n",
+                    rx[2], (rx[2] == MB85RS_ID_CONTINUATION) ? "(OK)" : "(MISMATCH)");
+        uart_printf("  [2] Product ID 1 : 0x%02X  %s\n",
+                    rx[3], (rx[3] == MB85RS_ID_PRODUCT1)     ? "(OK)" : "(MISMATCH)");
+        uart_printf("  [3] Product ID 2 : 0x%02X  %s\n",
+                    rx[4], (rx[4] == MB85RS_ID_PRODUCT2)     ? "(OK)" : "(MISMATCH)");
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* fram status                                                          */
+    /* ------------------------------------------------------------------ */
+    else if (strcmp(sub, "status") == 0) {
+        uint8_t sr = 0;
+        MB85RS_Error err = MB85RS_ReadStatus(&fram, &sr);
+
+        if (err != MB85RS_OK) {
+            uart_printf("ERROR: ReadStatus failed (code %d)\n", (int)err);
+            return;
+        }
+
+        const char *bp_desc;
+        switch (sr & (MB85RS_SR_BP1 | MB85RS_SR_BP0)) {
+            case 0x00: bp_desc = "None (all writable)";          break;
+            case 0x04: bp_desc = "0x30000-0x3FFFF (upper 1/4)"; break;
+            case 0x08: bp_desc = "0x20000-0x3FFFF (upper 1/2)"; break;
+            case 0x0C: bp_desc = "0x00000-0x3FFFF (all)";       break;
+            default:   bp_desc = "Unknown";                      break;
+        }
+
+        uart_printf("Status Register: 0x%02X\n", sr);
+        uart_printf("  WPEN (bit7) : %d - SR write-protect %s\n",
+                    (sr & MB85RS_SR_WPEN) ? 1 : 0,
+                    (sr & MB85RS_SR_WPEN) ? "ENABLED" : "disabled");
+        uart_printf("  BP1  (bit3) : %d\n", (sr & MB85RS_SR_BP1) ? 1 : 0);
+        uart_printf("  BP0  (bit2) : %d\n", (sr & MB85RS_SR_BP0) ? 1 : 0);
+        uart_printf("  Protected   : %s\n", bp_desc);
+        uart_printf("  WEL  (bit1) : %d - write %s\n",
+                    (sr & MB85RS_SR_WEL) ? 1 : 0,
+                    (sr & MB85RS_SR_WEL) ? "ENABLED" : "disabled");
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* fram read <addr> <len>                                               */
+    /* ------------------------------------------------------------------ */
+    else if (strcmp(sub, "read") == 0) {
+        if (tokenCount < 3) {
+            uart_printf("Usage: fram read <addr> <len>  (hex values)\n");
+            return;
+        }
+
+        uint32_t address = (uint32_t)strtol(tokens[1], NULL, 0);
+        uint32_t len     = (uint32_t)strtol(tokens[2], NULL, 0);
+
+        /* Driver limit: 4-byte header + data must fit in 512-byte buffer */
+        if (len == 0 || len > 508U) {
+            uart_printf("ERROR: len must be 1-508\n");
+            return;
+        }
+
+        uint8_t buf[508];
+        MB85RS_Error err = MB85RS_Read(&fram, address, buf, len);
+
+        if (err != MB85RS_OK) {
+            uart_printf("ERROR: Read failed (code %d)\n", (int)err);
+            return;
+        }
+
+        uart_printf("FRAM @ 0x%05X  (%u bytes):\n",
+                    (unsigned int)address, (unsigned int)len);
+        for (uint32_t i = 0; i < len; i++) {
+            if (i % 16 == 0) {
+                uart_printf("  %05X : ", (unsigned int)(address + i));
+            }
+            uart_printf("%02X ", buf[i]);
+            if ((i % 16 == 15) || (i == len - 1)) {
+                uart_printf("\n");
+            }
+        }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* fram write <addr> <b0> [b1..b7]                                      */
+    /* ------------------------------------------------------------------ */
+    else if (strcmp(sub, "write") == 0) {
+        if (tokenCount < 3) {
+            uart_printf("Usage: fram write <addr> <b0> [b1..b7]  (hex values)\n");
+            return;
+        }
+
+        uint32_t address   = (uint32_t)strtol(tokens[1], NULL, 0);
+        int      dataCount = tokenCount - 2;
+        if (dataCount > 8) dataCount = 8;
+
+        uint8_t buf[8];
+        for (int i = 0; i < dataCount; i++) {
+            buf[i] = (uint8_t)strtol(tokens[2 + i], NULL, 0);
+        }
+
+        MB85RS_Error err = MB85RS_Write(&fram, address, buf, (uint32_t)dataCount);
+
+        if (err != MB85RS_OK) {
+            uart_printf("ERROR: Write failed (code %d)\n", (int)err);
+            return;
+        }
+
+        uart_printf("Wrote %d byte(s) to 0x%05X:", dataCount, (unsigned int)address);
+        for (int i = 0; i < dataCount; i++) {
+            uart_printf(" 0x%02X", buf[i]);
+        }
+        uart_printf("\n");
+    }
+
+    else {
+        uart_printf("Unknown fram sub-command. Type 'fram' for help.\n");
+    }
 }

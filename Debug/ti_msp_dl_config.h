@@ -168,10 +168,6 @@ extern "C" {
 #define GPIO_SPI_0_SCLK_PIN                                      DL_GPIO_PIN_12
 #define GPIO_SPI_0_IOMUX_SCLK                                   (IOMUX_PINCM34)
 #define GPIO_SPI_0_IOMUX_SCLK_FUNC                   IOMUX_PINCM34_PF_SPI0_SCLK
-#define GPIO_SPI_0_CS0_PORT                                               GPIOA
-#define GPIO_SPI_0_CS0_PIN                                        DL_GPIO_PIN_8
-#define GPIO_SPI_0_IOMUX_CS0                                    (IOMUX_PINCM19)
-#define GPIO_SPI_0_IOMUX_CS0_FUNC                     IOMUX_PINCM19_PF_SPI0_CS0
 #define GPIO_SPI_0_CS1_PORT                                               GPIOB
 #define GPIO_SPI_0_CS1_PIN                                       DL_GPIO_PIN_24
 #define GPIO_SPI_0_IOMUX_CS1                                    (IOMUX_PINCM52)
@@ -294,6 +290,9 @@ extern "C" {
 /* Defines for HALL_3V: GPIOA.7 with pinCMx 14 on package pin 49 */
 #define DIGITAL_OUTPUT_PORTA_HALL_3V_PIN                         (DL_GPIO_PIN_7)
 #define DIGITAL_OUTPUT_PORTA_HALL_3V_IOMUX                       (IOMUX_PINCM14)
+/* Defines for CHIP_S_FRAM: GPIOA.18 with pinCMx 40 on package pin 11 */
+#define DIGITAL_OUTPUT_PORTA_CHIP_S_FRAM_PIN                    (DL_GPIO_PIN_18)
+#define DIGITAL_OUTPUT_PORTA_CHIP_S_FRAM_IOMUX                   (IOMUX_PINCM40)
 
 
 /* clang-format on */

@@ -6,6 +6,7 @@
 #include "ics/BQ25628/BQ25628_functions.h"
 #include "ics/BQ27Z7/BQ27Z7_functions.h"
 #include "HAL/spi_master.h"
+#include "HAL/spi_mem.h"
 
 volatile bool bq_monitor_active    = false;
 volatile bool hall_monitor_active  = false;
@@ -21,6 +22,7 @@ void setupCLI(void) {
     CLI_RegisterCommand("bq", cmd_bq, "BQ25628E charger control - type bq for full help");
     CLI_RegisterCommand("spi", cmd_spi, "SPI Master tx_view, tx_write, test");
     CLI_RegisterCommand("gauge",   cmd_gauge,   "BQ27Z746 gauge — type gauge for help");
+    CLI_RegisterCommand("fram", cmd_fram, "MB85RS2MTA FRAM - type fram for help");
 }
 
 
@@ -31,7 +33,9 @@ int main(void)
     setupCLI();  
     i2c_init();
     NVIC_EnableIRQ(SPI_1_INST_INT_IRQN);
+    NVIC_EnableIRQ(SPI_0_INST_INT_IRQN);
     SPI_Controller_Init(&stm32Spi, SPI_1_INST,  DMA_CH0_CHAN_ID, DMA_CH1_CHAN_ID, gSPI_TxPacket, gSPI_RxPacket, SPI_PACKET_SIZE);
+    SPI_Memory_Init(&framSpi, SPI_0_INST, DMA_CH2_CHAN_ID, DMA_CH3_CHAN_ID,DIGITAL_OUTPUT_PORTA_PORT,DIGITAL_OUTPUT_PORTA_CHIP_S_FRAM_PIN);
     char processingBuffer[MAX_INPUT_LEN];
 
     while (1) {

@@ -122,4 +122,5 @@ SUBDIRS := \
 HAL \
 ics/BQ25628 \
 ics/BQ27Z7 \
+ics/MB85RS \
 

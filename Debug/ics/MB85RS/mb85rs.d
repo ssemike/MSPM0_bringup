@@ -1,6 +1,7 @@
 # FIXED
 
-functions.o: ../functions.c \
+ics/MB85RS/mb85rs.o: ../ics/MB85RS/mb85rs.c ../ics/MB85RS/mb85rs.h \
+ C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/spi_mem.h \
  ti_msp_dl_config.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/msp.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/DeviceFamily.h \
@@ -83,12 +84,9 @@ functions.o: ../functions.c \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_vref.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_wwdt.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_interrupt.h \
- C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_systick.h \
- ../HAL/uart.h ../HAL/i2c.h ../ics/BQ25628/BQ25628_functions.h \
- ../HAL/spi_master.h ../ics/BQ27Z7/BQ27Z7_functions.h \
- C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/i2c.h \
- ../ics/BQ27Z7/gauge.h ../HAL/spi_mem.h ../ics/MB85RS/mb85rs.h \
- C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/spi_mem.h
+ C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_systick.h
+../ics/MB85RS/mb85rs.h:
+C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/spi_mem.h:
 ti_msp_dl_config.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/msp.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/DeviceFamily.h:
@@ -172,13 +170,3 @@ C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_vref.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_wwdt.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_interrupt.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_systick.h:
-../HAL/uart.h:
-../HAL/i2c.h:
-../ics/BQ25628/BQ25628_functions.h:
-../HAL/spi_master.h:
-../ics/BQ27Z7/BQ27Z7_functions.h:
-C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/i2c.h:
-../ics/BQ27Z7/gauge.h:
-../HAL/spi_mem.h:
-../ics/MB85RS/mb85rs.h:
-C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/spi_mem.h:
