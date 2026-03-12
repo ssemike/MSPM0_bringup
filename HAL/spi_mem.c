@@ -122,11 +122,10 @@ void SPI_Memory_Arm(SPI_Memory_Handle *handle,
         memset(rxBuf, 0, size);
     }
 
+    /* Arm the appropriate DMA path */
     if (mode == SPI_MEM_MODE_TX_ONLY) {
-        DL_SPI_clearInterruptStatus(handle->spiInst, DL_SPI_INTERRUPT_TX_EMPTY);
-        DL_SPI_enableInterrupt(handle->spiInst, DL_SPI_INTERRUPT_TX_EMPTY);
         arm_tx_only(handle);
-    }else {
+    } else {
         arm_full_duplex(handle);
     }
 }
@@ -149,29 +148,39 @@ void SPI_Memory_IRQHandler(SPI_Memory_Handle *handle)
 {
     switch (DL_SPI_getPendingInterrupt(handle->spiInst)) {
 
-    case DL_SPI_IIDX_TX_EMPTY:
-        if (handle->mode == SPI_MEM_MODE_TX_ONLY) {
-            uint32_t dmaMask   = (1u << handle->txDmaCh);
-            uint32_t dmaStatus = DL_DMA_getRawInterruptStatus(DMA, dmaMask);
+        /*
+         * TX_ONLY path:
+         *   DMA_DONE_TX fires when DMA has fed the last byte into the FIFO.
+         *   TX_EMPTY fires when the shift register has actually clocked out
+         *   the last bit. We wait for TX_EMPTY before marking DONE so that
+         *   the caller can safely deassert CS knowing the bus is idle.
+         */
+        case DL_SPI_IIDX_DMA_DONE_TX:
+            /* DMA finished — shift register may still be active, keep BUSY */
+            break;
 
-            if (dmaStatus & dmaMask) {
+        case DL_SPI_IIDX_IDLE:
+            if (handle->mode == SPI_MEM_MODE_TX_ONLY) {
                 handle->status = SPI_MEM_STATUS_DONE;
-                DL_DMA_clearInterruptStatus(DMA, dmaMask);
-                DL_SPI_disableInterrupt(handle->spiInst, DL_SPI_INTERRUPT_TX_EMPTY);
             }
-        }
-        break;
+            break;
 
-    case DL_SPI_IIDX_DMA_DONE_RX:
-        if (handle->mode == SPI_MEM_MODE_FULL_DUPLEX) {
-            handle->status = SPI_MEM_STATUS_DONE;
-        }
-        break;
+        /*
+         * FULL_DUPLEX path:
+         *   RX DMA finishing is the definitive signal — if RX is done, TX
+         *   must also be done and the shift register is empty.
+         */
+        case DL_SPI_IIDX_DMA_DONE_RX:
+            if (handle->mode == SPI_MEM_MODE_FULL_DUPLEX) {
+                handle->status = SPI_MEM_STATUS_DONE;
+            }
+            break;
 
-    default:
-        break;
+        default:
+            break;
     }
 }
+
 
 /* ---------------------------------------------------------------------------
  * IRQ vector — delegates to the generic handler.
