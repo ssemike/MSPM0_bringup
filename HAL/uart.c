@@ -165,7 +165,7 @@ typedef void (*CommandFunc)(char *args);
  *              Max output is 256 characters at a time (buffer limit).
  */
 int uart_printf(const char *fmt, ...){
-    char buffer[512];           // Adjust buffer size as needed
+    char buffer[768];           // Adjust buffer size as needed
     va_list args;
     va_start(args, fmt);
     int len = vsnprintf(buffer, sizeof(buffer), fmt, args);

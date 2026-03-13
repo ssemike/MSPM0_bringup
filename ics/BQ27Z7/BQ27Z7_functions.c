@@ -415,58 +415,6 @@ bool BQ27Z746_LoadGoldenImage(I2C_Regs *i2c, const char *fs_string)
 #define FET_OPTIONS_ADDR 0x45C0
 #define DF_FRAME_SIZE    34  
 
-bool BQ27Z746_SetUTFET_Direct(I2C_Regs *i2c, bool enable)
-{
-    uint8_t tx_addr[2];
-    uint8_t rx_frame[DF_FRAME_SIZE];
-
-    // 1. Point gauge to DF address
-    tx_addr[0] = (uint8_t)(FET_OPTIONS_ADDR & 0xFF);
-    tx_addr[1] = (uint8_t)((FET_OPTIONS_ADDR >> 8) & 0xFF);
-
-    if (gauge_write(i2c, 0x3E, tx_addr, 2) != 2)
-        return false;
-
-    DL_Common_delayCycles(64000);
-
-    // 2. Read current DF block
-    if (gauge_read(i2c, 0x3E, rx_frame, DF_FRAME_SIZE) != DF_FRAME_SIZE)
-        return false;
-
-    // 3. Extract and modify UTFET (bit 1)
-    uint16_t current_val = (uint16_t)rx_frame[2] | ((uint16_t)rx_frame[3] << 8);
-
-    if (enable)
-        current_val |=  (1u << 1);
-    else
-        current_val &= ~(1u << 1);
-
-    // 4. Write back
-    uint8_t write_buffer[4];
-    write_buffer[0] = tx_addr[0];
-    write_buffer[1] = tx_addr[1];
-    write_buffer[2] = (uint8_t)(current_val & 0xFF);
-    write_buffer[3] = (uint8_t)(current_val >> 8);
-
-    if (gauge_write(i2c, 0x3E, write_buffer, 4) != 4)
-        return false;
-
-    DL_Common_delayCycles(64000);
-
-    // 5. Re-read and verify
-    if (gauge_write(i2c, 0x3E, tx_addr, 2) != 2)
-        return false;
-
-    DL_Common_delayCycles(64000);
-
-    uint8_t verify_frame[DF_FRAME_SIZE];
-    if (gauge_read(i2c, 0x3E, verify_frame, DF_FRAME_SIZE) != DF_FRAME_SIZE)
-        return false;
-
-    uint16_t verify_val = (uint16_t)verify_frame[2] | ((uint16_t)verify_frame[3] << 8);
-
-    return (verify_val == current_val);
-}
 
 bool BQ27Z746_GetFETOptions(I2C_Regs *i2c, uint16_t *pOutValue)
 {
@@ -489,65 +437,7 @@ bool BQ27Z746_GetFETOptions(I2C_Regs *i2c, uint16_t *pOutValue)
 
 #define TEMP_CONFIG_ADDR  0x46B1 
 
-bool BQ27Z746_SetTempSensorConfig(I2C_Regs *i2c, bool enable_internal, bool enable_ts1)
-{
-    uint8_t tx_addr[2];
-    uint8_t rx_frame[DF_FRAME_SIZE];
 
-    tx_addr[0] = (uint8_t)(TEMP_CONFIG_ADDR & 0xFF);
-    tx_addr[1] = (uint8_t)((TEMP_CONFIG_ADDR >> 8) & 0xFF);
-
-    // 1. Point gauge to DF address
-    if (gauge_write(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, tx_addr, 2) != 2)
-        return false;
-
-    DL_Common_delayCycles(64000);
-
-    // 2. Read current value
-    if (gauge_read(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, rx_frame, DF_FRAME_SIZE) != DF_FRAME_SIZE)
-        return false;
-
-    // 3. Modify bits
-    uint8_t temp_enable = rx_frame[2];
-
-    if (enable_internal)
-        temp_enable |=  (1u << 0);
-    else
-        temp_enable &= ~(1u << 0);
-
-    if (enable_ts1)
-        temp_enable |=  (1u << 1);
-    else
-        temp_enable &= ~(1u << 1);
-
-    // 4. Write back
-    uint8_t write_buf[3];
-    write_buf[0] = tx_addr[0];
-    write_buf[1] = tx_addr[1];
-    write_buf[2] = temp_enable;
-
-    if (gauge_write(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, write_buf, 3) != 3)
-        return false;
-
-    DL_Common_delayCycles(64000);
-
-    // 5. Re-read and verify
-    if (gauge_write(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, tx_addr, 2) != 2)
-        return false;
-
-    DL_Common_delayCycles(64000);
-
-    uint8_t verify_frame[DF_FRAME_SIZE];
-    if (gauge_read(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, verify_frame, DF_FRAME_SIZE) != DF_FRAME_SIZE)
-        return false;
-
-    return (verify_frame[2] == temp_enable);
-}
-
-bool BQ27Z746_UseInternalTempOnly(I2C_Regs *i2c)
-{
-    return BQ27Z746_SetTempSensorConfig(i2c, true, false);
-}
 
 bool BQ27Z746_GetTempConfig(I2C_Regs *i2c, uint8_t *pTempEnable)
 {
@@ -569,4 +459,308 @@ bool BQ27Z746_GetTempConfig(I2C_Regs *i2c, uint8_t *pTempEnable)
     *pTempEnable = rx_frame[2];
 
     return true;
+}
+
+/*
+ * Integration patch — how to guard data-flash writes with the security layer
+ *
+ * Add #include "BQ27Z746_security.h" to BQ27Z746_functions.c, then
+ * wrap each DF write function as shown below.
+ *
+ * The pattern is always:
+ *   1. EnsureUnsealed  — check/open the device
+ *   2. Do the DF work
+ *   3. Seal            — lock it again (omit in dev/calibration flows)
+ *
+ * Only the two functions that write to data flash are shown; read-only
+ * functions (BQ27Z746_GetFETOptions, BQ27Z746_GetTempConfig) do not
+ * need unsealing because DF reads work in SEALED mode via MAC reads.
+ * Direct physical-address DF reads via 0x3E DO require UNSEALED — so
+ * those are guarded here too.
+ */
+
+/* ----------------------------------------------------------------
+ * BQ27Z746_SetUTFET_Direct  (replaces existing version)
+ * ---------------------------------------------------------------- */
+bool BQ27Z746_SetUTFET_Direct(I2C_Regs *i2c, bool enable)
+{
+    /* Gate: must be unsealed to access DF at physical address */
+    if (!BQ27Z746_EnsureUnsealed(i2c,
+                                  BQ27Z746_UNSEAL_KEY1,
+                                  BQ27Z746_UNSEAL_KEY2))
+        return false;
+
+    uint8_t tx_addr[2];
+    uint8_t rx_frame[DF_FRAME_SIZE];
+
+    tx_addr[0] = (uint8_t)(FET_OPTIONS_ADDR & 0xFF);
+    tx_addr[1] = (uint8_t)((FET_OPTIONS_ADDR >> 8) & 0xFF);
+
+    if (gauge_write(i2c, 0x3E, tx_addr, 2) != 2)
+        goto fail;
+
+    DL_Common_delayCycles(64000);
+
+    if (gauge_read(i2c, 0x3E, rx_frame, DF_FRAME_SIZE) != DF_FRAME_SIZE)
+        goto fail;
+
+    uint16_t current_val = (uint16_t)rx_frame[2] | ((uint16_t)rx_frame[3] << 8);
+
+    if (enable)
+        current_val |=  (1u << 1);
+    else
+        current_val &= ~(1u << 1);
+
+    uint8_t write_buffer[4];
+    write_buffer[0] = tx_addr[0];
+    write_buffer[1] = tx_addr[1];
+    write_buffer[2] = (uint8_t)(current_val & 0xFF);
+    write_buffer[3] = (uint8_t)(current_val >> 8);
+
+    if (gauge_write(i2c, 0x3E, write_buffer, 4) != 4)
+        goto fail;
+
+    DL_Common_delayCycles(64000);
+
+    /* Verify */
+    if (gauge_write(i2c, 0x3E, tx_addr, 2) != 2)
+        goto fail;
+
+    DL_Common_delayCycles(64000);
+
+    uint8_t verify_frame[DF_FRAME_SIZE];
+    if (gauge_read(i2c, 0x3E, verify_frame, DF_FRAME_SIZE) != DF_FRAME_SIZE)
+        goto fail;
+
+    uint16_t verify_val = (uint16_t)verify_frame[2] | ((uint16_t)verify_frame[3] << 8);
+
+    bool ok = (verify_val == current_val);
+
+    /* Re-seal now that DF work is done */
+    BQ27Z746_Seal(i2c);
+    return ok;
+
+fail:
+    BQ27Z746_Seal(i2c);
+    return false;
+}
+
+/* ----------------------------------------------------------------
+ * BQ27Z746_SetTempSensorConfig  (replaces existing version)
+ * ---------------------------------------------------------------- */
+bool BQ27Z746_SetTempSensorConfig(I2C_Regs *i2c, bool enable_internal, bool enable_ts1)
+{
+    if (!BQ27Z746_EnsureUnsealed(i2c,
+                                  BQ27Z746_UNSEAL_KEY1,
+                                  BQ27Z746_UNSEAL_KEY2))
+        return false;
+
+    uint8_t tx_addr[2];
+    uint8_t rx_frame[DF_FRAME_SIZE];
+
+    tx_addr[0] = (uint8_t)(TEMP_CONFIG_ADDR & 0xFF);
+    tx_addr[1] = (uint8_t)((TEMP_CONFIG_ADDR >> 8) & 0xFF);
+
+    if (gauge_write(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, tx_addr, 2) != 2)
+        goto fail;
+
+    DL_Common_delayCycles(64000);
+
+    if (gauge_read(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, rx_frame, DF_FRAME_SIZE) != DF_FRAME_SIZE)
+        goto fail;
+
+    uint8_t temp_enable = rx_frame[2];
+
+    if (enable_internal)
+        temp_enable |=  (1u << 0);
+    else
+        temp_enable &= ~(1u << 0);
+
+    if (enable_ts1)
+        temp_enable |=  (1u << 1);
+    else
+        temp_enable &= ~(1u << 1);
+
+    uint8_t write_buf[3];
+    write_buf[0] = tx_addr[0];
+    write_buf[1] = tx_addr[1];
+    write_buf[2] = temp_enable;
+
+    if (gauge_write(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, write_buf, 3) != 3)
+        goto fail;
+
+    DL_Common_delayCycles(64000);
+
+    /* Verify */
+    if (gauge_write(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, tx_addr, 2) != 2)
+        goto fail;
+
+    DL_Common_delayCycles(64000);
+
+    uint8_t verify_frame[DF_FRAME_SIZE];
+    if (gauge_read(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, verify_frame, DF_FRAME_SIZE) != DF_FRAME_SIZE)
+        goto fail;
+
+    bool ok = (verify_frame[2] == temp_enable);
+
+    BQ27Z746_Seal(i2c);
+    return ok;
+
+fail:
+    BQ27Z746_Seal(i2c);
+    return false;
+}
+
+
+bool BQ27Z746_UseInternalTempOnly(I2C_Regs *i2c)
+{
+    return BQ27Z746_SetTempSensorConfig(i2c, true, false);
+}
+
+
+/*
+ * BQ27Z746 Security / Unseal Layer
+ *
+ * References:
+ *   TRM §10.3   — Security Modes (SEALED / UNSEALED / FULL ACCESS)
+ *   TRM §15.2.35 — OperationStatus (MAC 0x0054), SEC1:SEC0 at bits [9:8]
+ *   TRM §15.2.27 — SecurityKeys    (MAC 0x0035)
+ *   TRM §10.3.2  — SEALED to UNSEALED two-step key sequence
+ */
+
+/* ----------------------------------------------------------------
+ * Internal: OperationStatusA bit positions
+ * The 32-bit OperationStatus word has SEC1:SEC0 at bits [9:8],
+ * which sit in byte 1 (the second byte) of the little-endian word.
+ * ---------------------------------------------------------------- */
+#define OPSTATUS_SEC_SHIFT   8u
+#define OPSTATUS_SEC_MASK    0x03u
+
+/* MAC command codes used here */
+#define MAC_SEAL_DEVICE      0x0030u
+
+/* How long to wait after sending a key word before the gauge
+ * processes it (not formally specified; 2 ms is conservative). */
+#define KEY_DELAY_US         2000u
+
+/* usleep helper — matches the one in gauge.c */
+static void security_usleep(uint32_t us)
+{
+    delay_cycles(us * 32u);   /* 32 MHz system clock */
+}
+
+/* ================================================================
+ * BQ27Z746_GetSecurityMode
+ * ================================================================ */
+uint8_t BQ27Z746_GetSecurityMode(I2C_Regs *i2c)
+{
+    uint8_t data[BQ27Z746_MAC_DATA_LEN];
+    uint8_t len = 0u;
+
+    if (!BQ27Z746_MAC_Read(i2c, BQ27Z746_MAC_OPERATIONSTATUS, data, &len))
+        return 0xFFu;   /* I2C error sentinel */
+
+    /* OperationStatus is a 32-bit LE value; SEC1:SEC0 are bits [9:8].
+     * Byte 0 = bits[7:0], Byte 1 = bits[15:8].
+     * So SEC1:SEC0 = (byte1 >> 0) & 0x03. */
+    if (len < 2u)
+        return 0xFFu;
+
+    return (uint8_t)((data[1] >> (OPSTATUS_SEC_SHIFT - 8u)) & OPSTATUS_SEC_MASK);
+}
+
+/* ================================================================
+ * BQ27Z746_IsSealed
+ * ================================================================ */
+bool BQ27Z746_IsSealed(I2C_Regs *i2c)
+{
+    return (BQ27Z746_GetSecurityMode(i2c) == BQ27Z746_SEC_SEALED);
+}
+
+/* ================================================================
+ * BQ27Z746_Unseal
+ *
+ * Protocol (TRM §10.3.2):
+ *   Step 1 — Write KEY_WORD1 as a 2-byte little-endian payload to
+ *             AltManufacturerAccess (0x3E). No other write in between.
+ *   Step 2 — Write KEY_WORD2 the same way.
+ *   The gauge transitions to UNSEALED if both words match.
+ *
+ * We use gauge_write directly (not BQ27Z746_MAC_Write) because this
+ * is a raw two-byte word write to 0x3E — not a framed MAC command
+ * with a checksum/length trailer.
+ * ================================================================ */
+bool BQ27Z746_Unseal(I2C_Regs *i2c, uint16_t key1, uint16_t key2)
+{
+    uint8_t mode = BQ27Z746_GetSecurityMode(i2c);
+
+    /* Already open — nothing to do */
+    if (mode == BQ27Z746_SEC_UNSEALED || mode == BQ27Z746_SEC_FULL_ACCESS)
+        return true;
+
+    /* Can't unseal if we can't read status */
+    if (mode == 0xFFu)
+        return false;
+
+    /* --- Step 1: send first key word --- */
+    uint8_t word[2];
+    word[0] = (uint8_t)(key1 & 0xFFu);
+    word[1] = (uint8_t)((key1 >> 8u) & 0xFFu);
+
+    if (gauge_write(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, word, 2u) != 2)
+        return false;
+
+    security_usleep(KEY_DELAY_US);
+
+    /* --- Step 2: send second key word --- */
+    word[0] = (uint8_t)(key2 & 0xFFu);
+    word[1] = (uint8_t)((key2 >> 8u) & 0xFFu);
+
+    if (gauge_write(i2c, BQ27Z746_REG_ALTMANUFACTURERACCESS, word, 2u) != 2)
+        return false;
+
+    security_usleep(KEY_DELAY_US);
+
+    /* --- Verify the transition occurred --- */
+    mode = BQ27Z746_GetSecurityMode(i2c);
+    return (mode == BQ27Z746_SEC_UNSEALED || mode == BQ27Z746_SEC_FULL_ACCESS);
+}
+
+/* ================================================================
+ * BQ27Z746_Seal
+ *
+ * Sends MAC 0x0030 SealDevice.
+ * TRM §10.3.1: after sealing, only a hardware reset returns to
+ * SEALED on next power-up; the device immediately becomes SEALED.
+ * ================================================================ */
+bool BQ27Z746_Seal(I2C_Regs *i2c)
+{
+    uint8_t mode = BQ27Z746_GetSecurityMode(i2c);
+
+    /* Already sealed */
+    if (mode == BQ27Z746_SEC_SEALED)
+        return true;
+
+    if (!BQ27Z746_MAC_Send(i2c, MAC_SEAL_DEVICE))
+        return false;
+
+    security_usleep(KEY_DELAY_US);
+
+    return (BQ27Z746_GetSecurityMode(i2c) == BQ27Z746_SEC_SEALED);
+}
+
+/* ================================================================
+ * BQ27Z746_EnsureUnsealed
+ * ================================================================ */
+bool BQ27Z746_EnsureUnsealed(I2C_Regs *i2c, uint16_t key1, uint16_t key2)
+{
+    uint8_t mode = BQ27Z746_GetSecurityMode(i2c);
+
+    if (mode == BQ27Z746_SEC_UNSEALED || mode == BQ27Z746_SEC_FULL_ACCESS)
+        return true;   /* already open */
+
+    if (mode != BQ27Z746_SEC_SEALED)
+        return false;  /* I2C error or reserved state */
+
+    return BQ27Z746_Unseal(i2c, key1, key2);
 }

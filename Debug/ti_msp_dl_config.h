@@ -168,10 +168,6 @@ extern "C" {
 #define GPIO_SPI_0_SCLK_PIN                                      DL_GPIO_PIN_12
 #define GPIO_SPI_0_IOMUX_SCLK                                   (IOMUX_PINCM34)
 #define GPIO_SPI_0_IOMUX_SCLK_FUNC                   IOMUX_PINCM34_PF_SPI0_SCLK
-#define GPIO_SPI_0_CS1_PORT                                               GPIOB
-#define GPIO_SPI_0_CS1_PIN                                       DL_GPIO_PIN_24
-#define GPIO_SPI_0_IOMUX_CS1                                    (IOMUX_PINCM52)
-#define GPIO_SPI_0_IOMUX_CS1_FUNC               IOMUX_PINCM52_PF_SPI0_CS1_POCI1
 /* Defines for SPI_1 */
 #define SPI_1_INST                                                         SPI1
 #define SPI_1_INST_IRQHandler                                   SPI1_IRQHandler
@@ -275,6 +271,9 @@ extern "C" {
 /* Defines for LORA_2_CPS: GPIOB.9 with pinCMx 26 on package pin 61 */
 #define DIGITAL_OUTPUT_PORTB_LORA_2_CPS_PIN                      (DL_GPIO_PIN_9)
 #define DIGITAL_OUTPUT_PORTB_LORA_2_CPS_IOMUX                    (IOMUX_PINCM26)
+/* Defines for CHIP_S_LORA: GPIOB.24 with pinCMx 52 on package pin 23 */
+#define DIGITAL_OUTPUT_PORTB_CHIP_S_LORA_PIN                    (DL_GPIO_PIN_24)
+#define DIGITAL_OUTPUT_PORTB_CHIP_S_LORA_IOMUX                   (IOMUX_PINCM52)
 /* Port definition for Pin Group DIGITAL_OUTPUT_PORTA */
 #define DIGITAL_OUTPUT_PORTA_PORT                                        (GPIOA)
 

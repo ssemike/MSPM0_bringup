@@ -180,4 +180,93 @@ bool BQ27Z746_GetFETOptions(I2C_Regs *i2c, uint16_t *pOutValue);
 bool BQ27Z746_GetTempConfig(I2C_Regs *i2c, uint8_t *pTempEnable);
 bool BQ27Z746_UseInternalTempOnly(I2C_Regs *i2c);
 
+/*
+ * BQ27Z746 Security / Unseal Layer
+ *
+ * The BQ27Z746 has three security levels (TRM §10.3):
+ *
+ *   SEALED      SEC1=1, SEC0=1  — DF and extended MAC inaccessible
+ *   UNSEALED    SEC1=1, SEC0=0  — full DF read/write access
+ *   FULL ACCESS SEC1=0, SEC0=1  — same as UNSEALED + boot-ROM access
+ *
+ * SEC1:SEC0 live in OperationStatusA (MAC 0x0054), bits [9:8].
+ *
+ * Unsealing is a two-step MAC write:
+ *   1. Write KEY_WORD1 to AltManufacturerAccess (0x3E)
+ *   2. Write KEY_WORD2 to AltManufacturerAccess (0x3E)
+ *   No other write may occur between the two steps.
+ *
+ * The factory default keys are device-specific and not published in the
+ * TRM. TI ships the device in FULL ACCESS mode. If your device has been
+ * sealed with the factory defaults, use the values below. If your
+ * production flow has changed the keys via MAC 0x0035 SecurityKeys(),
+ * replace these constants with your own.
+ *
+ * To re-seal after DF writes, call BQ27Z746_Seal().
+ */
+
+// ================================================================
+// Factory-default unseal keys (TI BQ27Z746 — change if customised)
+// Each word is sent little-endian as a 2-byte MAC write.
+// ================================================================
+#define BQ27Z746_UNSEAL_KEY1        0x0414u   /* first word  */
+#define BQ27Z746_UNSEAL_KEY2        0x3672u   /* second word */
+
+// Full-Access keys (only needed if you need boot-ROM access)
+#define BQ27Z746_FULLACCESS_KEY1    0xFFFFu
+#define BQ27Z746_FULLACCESS_KEY2    0xFFFFu
+
+// ================================================================
+// Security-level constants (SEC1:SEC0 encoding)
+// ================================================================
+#define BQ27Z746_SEC_RESERVED       0x00u   /* 0,0 — do not use         */
+#define BQ27Z746_SEC_FULL_ACCESS    0x01u   /* 0,1 — shipped default    */
+#define BQ27Z746_SEC_UNSEALED       0x02u   /* 1,0                      */
+#define BQ27Z746_SEC_SEALED         0x03u   /* 1,1                      */
+
+// ================================================================
+// Public API
+// ================================================================
+
+/*
+ * BQ27Z746_GetSecurityMode
+ * Reads OperationStatusA (MAC 0x0054) and extracts SEC1:SEC0.
+ * Returns one of BQ27Z746_SEC_* constants.
+ * Returns 0xFF on I2C error.
+ */
+uint8_t BQ27Z746_GetSecurityMode(I2C_Regs *i2c);
+
+/*
+ * BQ27Z746_IsSealed
+ * Convenience wrapper — returns true when SEC1=1, SEC0=1.
+ */
+bool BQ27Z746_IsSealed(I2C_Regs *i2c);
+
+/*
+ * BQ27Z746_Unseal
+ * Transitions SEALED → UNSEALED using the two-word unseal key.
+ * Safe to call when already UNSEALED or FULL ACCESS (no-op).
+ * Returns true on success, false if the device remains sealed.
+ *
+ * key1 / key2: the two 16-bit key words (use the #defines above
+ *              unless your production flow changed them).
+ */
+bool BQ27Z746_Unseal(I2C_Regs *i2c, uint16_t key1, uint16_t key2);
+
+/*
+ * BQ27Z746_Seal
+ * Sends MAC 0x0030 SealDevice to return to SEALED mode.
+ * Call this after finishing DF writes in production.
+ */
+bool BQ27Z746_Seal(I2C_Regs *i2c);
+
+/*
+ * BQ27Z746_EnsureUnsealed
+ * Checks current security level; unseals only if necessary.
+ * Returns true if the device is UNSEALED or FULL ACCESS on exit.
+ * Preferred helper to call before any DF write operation.
+ */
+bool BQ27Z746_EnsureUnsealed(I2C_Regs *i2c, uint16_t key1, uint16_t key2);
+
+
 #endif
