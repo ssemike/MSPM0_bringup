@@ -9,6 +9,7 @@ SYSCFG_SRCS += \
 ../MSPM0_interface.syscfg 
 
 C_SRCS += \
+../BoardAPI.c \
 ./ti_msp_dl_config.c \
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/m0p/startup_system_files/ticlang/startup_mspm0g350x_ticlang.c \
 ../functions.c \
@@ -23,6 +24,7 @@ GEN_FILES += \
 ./ti_msp_dl_config.c 
 
 C_DEPS += \
+./BoardAPI.d \
 ./ti_msp_dl_config.d \
 ./startup_mspm0g350x_ticlang.d \
 ./functions.d \
@@ -32,6 +34,7 @@ GEN_OPTS += \
 ./device.opt 
 
 OBJS += \
+./BoardAPI.o \
 ./ti_msp_dl_config.o \
 ./startup_mspm0g350x_ticlang.o \
 ./functions.o \
@@ -43,6 +46,7 @@ GEN_MISC_FILES += \
 ./Event.dot 
 
 OBJS__QUOTED += \
+"BoardAPI.o" \
 "ti_msp_dl_config.o" \
 "startup_mspm0g350x_ticlang.o" \
 "functions.o" \
@@ -54,6 +58,7 @@ GEN_MISC_FILES__QUOTED += \
 "Event.dot" 
 
 C_DEPS__QUOTED += \
+"BoardAPI.d" \
 "ti_msp_dl_config.d" \
 "startup_mspm0g350x_ticlang.d" \
 "functions.d" \
@@ -64,13 +69,14 @@ GEN_FILES__QUOTED += \
 "device.opt" \
 "ti_msp_dl_config.c" 
 
-SYSCFG_SRCS__QUOTED += \
-"../MSPM0_interface.syscfg" 
-
 C_SRCS__QUOTED += \
+"../BoardAPI.c" \
 "./ti_msp_dl_config.c" \
 "C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/m0p/startup_system_files/ticlang/startup_mspm0g350x_ticlang.c" \
 "../functions.c" \
 "../main.c" 
+
+SYSCFG_SRCS__QUOTED += \
+"../MSPM0_interface.syscfg" 
 
 

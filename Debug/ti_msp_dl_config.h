@@ -77,6 +77,32 @@ extern "C" {
 
 
 
+/* Defines for VOLTAGE_CONTROL */
+#define VOLTAGE_CONTROL_INST                                               TIMA0
+#define VOLTAGE_CONTROL_INST_IRQHandler                         TIMA0_IRQHandler
+#define VOLTAGE_CONTROL_INST_INT_IRQN                           (TIMA0_INT_IRQn)
+#define VOLTAGE_CONTROL_INST_CLK_FREQ                                    4000000
+/* GPIO defines for channel 0 */
+#define GPIO_VOLTAGE_CONTROL_C0_PORT                                       GPIOA
+#define GPIO_VOLTAGE_CONTROL_C0_PIN                               DL_GPIO_PIN_21
+#define GPIO_VOLTAGE_CONTROL_C0_IOMUX                            (IOMUX_PINCM46)
+#define GPIO_VOLTAGE_CONTROL_C0_IOMUX_FUNC             IOMUX_PINCM46_PF_TIMA0_CCP0
+#define GPIO_VOLTAGE_CONTROL_C0_IDX                          DL_TIMER_CC_0_INDEX
+
+/* Defines for CURRENT_CONTROL */
+#define CURRENT_CONTROL_INST                                               TIMA1
+#define CURRENT_CONTROL_INST_IRQHandler                         TIMA1_IRQHandler
+#define CURRENT_CONTROL_INST_INT_IRQN                           (TIMA1_INT_IRQn)
+#define CURRENT_CONTROL_INST_CLK_FREQ                                    4000000
+/* GPIO defines for channel 0 */
+#define GPIO_CURRENT_CONTROL_C0_PORT                                       GPIOB
+#define GPIO_CURRENT_CONTROL_C0_PIN                               DL_GPIO_PIN_17
+#define GPIO_CURRENT_CONTROL_C0_IOMUX                            (IOMUX_PINCM43)
+#define GPIO_CURRENT_CONTROL_C0_IOMUX_FUNC             IOMUX_PINCM43_PF_TIMA1_CCP0
+#define GPIO_CURRENT_CONTROL_C0_IDX                          DL_TIMER_CC_0_INDEX
+
+
+
 /* Defines for TIMER_0 */
 #define TIMER_0_INST                                                     (TIMG8)
 #define TIMER_0_INST_IRQHandler                                 TIMG8_IRQHandler
@@ -253,9 +279,6 @@ extern "C" {
 /* Defines for MCU_WIFI_PON: GPIOB.15 with pinCMx 32 on package pin 3 */
 #define DIGITAL_OUTPUT_PORTB_MCU_WIFI_PON_PIN                   (DL_GPIO_PIN_15)
 #define DIGITAL_OUTPUT_PORTB_MCU_WIFI_PON_IOMUX                  (IOMUX_PINCM32)
-/* Defines for SERIN: GPIOB.17 with pinCMx 43 on package pin 14 */
-#define DIGITAL_OUTPUT_PORTB_SERIN_PIN                          (DL_GPIO_PIN_17)
-#define DIGITAL_OUTPUT_PORTB_SERIN_IOMUX                         (IOMUX_PINCM43)
 /* Defines for IR_SYNC: GPIOB.18 with pinCMx 44 on package pin 15 */
 #define DIGITAL_OUTPUT_PORTB_IR_SYNC_PIN                        (DL_GPIO_PIN_18)
 #define DIGITAL_OUTPUT_PORTB_IR_SYNC_IOMUX                       (IOMUX_PINCM44)
@@ -300,6 +323,8 @@ void SYSCFG_DL_init(void);
 void SYSCFG_DL_initPower(void);
 void SYSCFG_DL_GPIO_init(void);
 void SYSCFG_DL_SYSCTL_init(void);
+void SYSCFG_DL_VOLTAGE_CONTROL_init(void);
+void SYSCFG_DL_CURRENT_CONTROL_init(void);
 void SYSCFG_DL_TIMER_0_init(void);
 void SYSCFG_DL_I2C_0_init(void);
 void SYSCFG_DL_I2C_1_init(void);

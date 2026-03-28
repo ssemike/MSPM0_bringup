@@ -11,6 +11,7 @@
 volatile bool bq_monitor_active    = false;
 volatile bool hall_monitor_active  = false;
 volatile bool gauge_monitor_active = false;
+volatile bool pir_monitor_active   = false;
 volatile uint32_t monitor_rate = 2000; 
 volatile uint32_t hall_monitor_counter = 0;
 
@@ -23,6 +24,8 @@ void setupCLI(void) {
     CLI_RegisterCommand("spi", cmd_spi, "SPI Master tx_view, tx_write, test");
     CLI_RegisterCommand("gauge",   cmd_gauge,   "BQ27Z746 gauge — type gauge for help");
     CLI_RegisterCommand("fram", cmd_fram, "MB85RS2MTA FRAM - type fram for help");
+    CLI_RegisterCommand("led",    cmd_leds,    "LED control - type led for full help");
+    CLI_RegisterCommand("pir",     cmd_pir,     "PIR monitor - type pir for full help");
 }
 
 
@@ -144,6 +147,22 @@ int main(void)
                 gauge_monitor_active = false;
                 get_UART_buffer(processingBuffer);
                 uart_printf("Gauge monitor stopped\n");
+            }
+        }
+        if (pir_monitor_active) {
+            delay_cycles(monitor_rate * 32000);
+ 
+            uint32_t pin_state = DL_GPIO_readPins(
+                EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT,
+                EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN
+            );
+ 
+            uart_printf("PIR_TRIGGER: %s\n", pin_state ? "HIGH (triggered)" : "LOW (idle)");
+ 
+            if (data_received) {
+                pir_monitor_active = false;
+                get_UART_buffer(processingBuffer);
+                uart_printf("PIR monitor stopped\n");
             }
         }
     }

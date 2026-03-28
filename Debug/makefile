@@ -10,6 +10,7 @@ GEN_OPTS__FLAG := @"./device.opt"
 GEN_CMDS__FLAG := -Wl,-l"./device_linker.cmd" 
 
 ORDERED_OBJS += \
+"./BoardAPI.o" \
 "./ti_msp_dl_config.o" \
 "./startup_mspm0g350x_ticlang.o" \
 "./functions.o" \
@@ -154,8 +155,8 @@ HW_SW_interface_CCS.out: $(OBJS) $(GEN_CMDS)
 # Other Targets
 clean:
 	-$(RM) $(GEN_MISC_FILES__QUOTED)$(GEN_FILES__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "ti_msp_dl_config.o" "startup_mspm0g350x_ticlang.o" "functions.o" "main.o" "HAL\i2c.o" "HAL\spi_master.o" "HAL\spi_mem.o" "HAL\uart.o" "ics\BQ25628\BQ25628_functions.o" "ics\BQ27Z7\BQ27Z7_functions.o" "ics\BQ27Z7\gauge.o" "ics\MB85RS\mb85rs.o" 
-	-$(RM) "ti_msp_dl_config.d" "startup_mspm0g350x_ticlang.d" "functions.d" "main.d" "HAL\i2c.d" "HAL\spi_master.d" "HAL\spi_mem.d" "HAL\uart.d" "ics\BQ25628\BQ25628_functions.d" "ics\BQ27Z7\BQ27Z7_functions.d" "ics\BQ27Z7\gauge.d" "ics\MB85RS\mb85rs.d" 
+	-$(RM) "BoardAPI.o" "ti_msp_dl_config.o" "startup_mspm0g350x_ticlang.o" "functions.o" "main.o" "HAL\i2c.o" "HAL\spi_master.o" "HAL\spi_mem.o" "HAL\uart.o" "ics\BQ25628\BQ25628_functions.o" "ics\BQ27Z7\BQ27Z7_functions.o" "ics\BQ27Z7\gauge.o" "ics\MB85RS\mb85rs.o" 
+	-$(RM) "BoardAPI.d" "ti_msp_dl_config.d" "startup_mspm0g350x_ticlang.d" "functions.d" "main.d" "HAL\i2c.d" "HAL\spi_master.d" "HAL\spi_mem.d" "HAL\uart.d" "ics\BQ25628\BQ25628_functions.d" "ics\BQ27Z7\BQ27Z7_functions.d" "ics\BQ27Z7\gauge.d" "ics\MB85RS\mb85rs.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

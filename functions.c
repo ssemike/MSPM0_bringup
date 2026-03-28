@@ -8,6 +8,7 @@
 #include "ics/BQ27Z7/BQ27Z7_functions.h"
 #include "HAL/spi_mem.h"
 #include "ics/MB85RS/mb85rs.h"
+#include "BoardAPI.h"
 
 extern volatile bool gauge_monitor_active;
 extern volatile bool bq_monitor_active; 
@@ -782,3 +783,113 @@ void cmd_gauge(char *args)
         uart_printf("Unknown gauge sub-command. Type 'gauge' for help.\n");
     }
 }
+
+
+
+// ─────────────────────────────────────────────
+// LED Control Command
+// ─────────────────────────────────────────────
+ 
+void cmd_leds(char *args) {
+    char *tokens[2];
+    int tokenCount = CLI_Tokenize(args, tokens, 2);
+ 
+    if (tokenCount == 0) {
+        uart_printf("LED Control CLI:\n"
+                    "  led on <1|0>       - Enables and disables boost\n"
+                    "  led init              - initialise LED control, both outputs zeroed\n"
+                    "  led voltage <mV>      - set boost converter voltage (3490 - 11330 mV)\n"
+                    "  led current <mA>      - set LED current (0 - 500 mA)\n"
+                    "  led off               - safe shutdown, zeros current then voltage\n");
+        return;
+    }
+ 
+    char *sub = tokens[0];
+
+    if (strcmp(sub, "on") == 0) {
+    if (tokenCount < 2) {
+        uart_printf("Usage: boost on <1|0>\n");
+        return;
+    }
+        int state = atoi(tokens[1]);
+        if (state) {
+            enable_led_boost();
+            uart_printf("Boost Enabled\n");
+        } else {
+            disable_led_boost();
+            uart_printf("Boost disabled\n");
+        }
+    }
+    // Initialise LED control state and zero both PWM outputs
+    else if (strcmp(sub, "init") == 0) {
+        LED_control_init();
+        uart_printf("LED control initialised. Voltage: 0 mV, Current: 0 mA\n");
+    }
+ 
+    // Set boost converter output voltage
+    else if (strcmp(sub, "voltage") == 0) {
+        if (tokenCount < 2) {
+            uart_printf("Usage: led voltage <mV>  (valid range: 3490 - 11330)\n");
+            return;
+        }
+        uint16_t voltage = (uint16_t)atoi(tokens[1]);
+        LED_set_voltage(voltage);
+        uart_printf("LED voltage set to %d mV (applied: %d mV)\n", voltage, LED_get_voltage());
+    }
+ 
+    // Set LED output current
+    else if (strcmp(sub, "current") == 0) {
+        if (tokenCount < 2) {
+            uart_printf("Usage: led current <mA>  (valid range: 0 - 500)\n");
+            return;
+        }
+        uint16_t current = (uint16_t)atoi(tokens[1]);
+        LED_set_current(current);
+        uart_printf("LED current set to %d mA (applied: %d mA)\n", current, LED_get_current());
+    }
+ 
+    // Safe shutdown — zero current first then voltage
+    else if (strcmp(sub, "off") == 0) {
+        LED_set_current(0);
+        LED_set_voltage(0);
+        uart_printf("LED off. Current zeroed then voltage zeroed.\n");
+    }
+ 
+    else {
+        uart_printf("Unknown led sub-command. Type 'led' for help.\n");
+    }
+}
+ 
+
+ // ─────────────────────────────────────────────
+// PIR Monitor Command
+// ─────────────────────────────────────────────
+ 
+void cmd_pir(char *args) {
+    char *tokens[1];
+    int tokenCount = CLI_Tokenize(args, tokens, 1);
+ 
+    if (tokenCount == 0) {
+        uart_printf("PIR Monitor CLI:\n"
+                    "  pir monitor   - print PIR_TRIGGER pin state every 200ms\n"
+                    "  pir stop      - stop monitor\n");
+        return;
+    }
+ 
+    char *sub = tokens[0];
+ 
+    if (strcmp(sub, "monitor") == 0) {
+        extern volatile bool pir_monitor_active;
+        pir_monitor_active = true;
+        uart_printf("PIR monitor started — type any command to stop\n");
+    }
+    else if (strcmp(sub, "stop") == 0) {
+        extern volatile bool pir_monitor_active;
+        pir_monitor_active = false;
+        uart_printf("PIR monitor stopped\n");
+    }
+    else {
+        uart_printf("Unknown pir sub-command. Type 'pir' for help.\n");
+    }
+}
+ 
