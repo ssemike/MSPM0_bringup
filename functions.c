@@ -851,10 +851,10 @@ void cmd_leds(char *args) {
     // Safe shutdown — zero current first then voltage
     else if (strcmp(sub, "off") == 0) {
         LED_set_current(0);
-        LED_set_voltage(0);
+        // LED_set_voltage(0);
+        disable_led_boost();
         uart_printf("LED off. Current zeroed then voltage zeroed.\n");
     }
- 
     else {
         uart_printf("Unknown led sub-command. Type 'led' for help.\n");
     }

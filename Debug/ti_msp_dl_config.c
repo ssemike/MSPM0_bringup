@@ -42,6 +42,7 @@
 
 DL_TimerA_backupConfig gVOLTAGE_CONTROLBackup;
 DL_TimerA_backupConfig gCURRENT_CONTROLBackup;
+DL_TimerG_backupConfig gTIMER_0Backup;
 DL_SPI_backupConfig gSPI_0Backup;
 DL_SPI_backupConfig gSPI_1Backup;
 
@@ -68,7 +69,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_init(void)
     /* Ensure backup structures have no valid state */
 	gVOLTAGE_CONTROLBackup.backupRdy 	= false;
 	gCURRENT_CONTROLBackup.backupRdy 	= false;
-
+	gTIMER_0Backup.backupRdy 	= false;
 
 	gSPI_0Backup.backupRdy 	= false;
 	gSPI_1Backup.backupRdy 	= false;
@@ -84,6 +85,7 @@ SYSCONFIG_WEAK bool SYSCFG_DL_saveConfiguration(void)
 
 	retStatus &= DL_TimerA_saveConfiguration(VOLTAGE_CONTROL_INST, &gVOLTAGE_CONTROLBackup);
 	retStatus &= DL_TimerA_saveConfiguration(CURRENT_CONTROL_INST, &gCURRENT_CONTROLBackup);
+	retStatus &= DL_TimerG_saveConfiguration(TIMER_0_INST, &gTIMER_0Backup);
 	retStatus &= DL_SPI_saveConfiguration(SPI_0_INST, &gSPI_0Backup);
 	retStatus &= DL_SPI_saveConfiguration(SPI_1_INST, &gSPI_1Backup);
 
@@ -97,6 +99,7 @@ SYSCONFIG_WEAK bool SYSCFG_DL_restoreConfiguration(void)
 
 	retStatus &= DL_TimerA_restoreConfiguration(VOLTAGE_CONTROL_INST, &gVOLTAGE_CONTROLBackup, false);
 	retStatus &= DL_TimerA_restoreConfiguration(CURRENT_CONTROL_INST, &gCURRENT_CONTROLBackup, false);
+	retStatus &= DL_TimerG_restoreConfiguration(TIMER_0_INST, &gTIMER_0Backup, false);
 	retStatus &= DL_SPI_restoreConfiguration(SPI_0_INST, &gSPI_0Backup);
 	retStatus &= DL_SPI_restoreConfiguration(SPI_1_INST, &gSPI_1Backup);
 
@@ -371,7 +374,7 @@ static const DL_TimerA_ClockConfig gCURRENT_CONTROLClockConfig = {
 static const DL_TimerA_PWMConfig gCURRENT_CONTROLConfig = {
     .pwmMode = DL_TIMER_PWM_MODE_EDGE_ALIGN,
     .period = 100,
-    .isTimerWithFourCC = true,
+    .isTimerWithFourCC = false,
     .startTimer = DL_TIMER_STOP,
 };
 

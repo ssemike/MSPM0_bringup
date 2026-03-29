@@ -104,9 +104,9 @@ extern "C" {
 
 
 /* Defines for TIMER_0 */
-#define TIMER_0_INST                                                     (TIMG8)
-#define TIMER_0_INST_IRQHandler                                 TIMG8_IRQHandler
-#define TIMER_0_INST_INT_IRQN                                   (TIMG8_INT_IRQn)
+#define TIMER_0_INST                                                     (TIMG6)
+#define TIMER_0_INST_IRQHandler                                 TIMG6_IRQHandler
+#define TIMER_0_INST_INT_IRQN                                   (TIMG6_INT_IRQn)
 #define TIMER_0_INST_LOAD_VALUE                                         (62499U)
 
 

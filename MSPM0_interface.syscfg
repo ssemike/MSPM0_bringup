@@ -175,8 +175,8 @@ PWM1.ccp0PinConfig.hideOutputInversion  = scripting.forceWrite(false);
 PWM1.ccp0PinConfig.onlyInternalResistor = scripting.forceWrite(false);
 PWM1.ccp0PinConfig.passedPeripheralType = scripting.forceWrite("Digital");
 PWM1.ccp0PinConfig.$name                = "ti_driverlib_gpio_GPIOPinGeneric3";
-PWM1.ccp0PinConfig.enableConfig         = true;
 PWM1.ccp0PinConfig.internalResistor     = "PULL_DOWN";
+PWM1.ccp0PinConfig.enableConfig         = true;
 PWM1.peripheral.$assign                 = "TIMA0";
 PWM1.peripheral.ccp0Pin.$assign         = "PA21";
 
@@ -193,6 +193,7 @@ PWM2.ccp0PinConfig.passedPeripheralType = scripting.forceWrite("Digital");
 PWM2.ccp0PinConfig.$name                = "ti_driverlib_gpio_GPIOPinGeneric4";
 PWM2.ccp0PinConfig.enableConfig         = true;
 PWM2.ccp0PinConfig.internalResistor     = "PULL_DOWN";
+PWM2.peripheral.$assign                 = "TIMA1";
 PWM2.peripheral.ccp0Pin.$assign         = "PB17";
 
 SPI1.$name                                 = "SPI_0";
@@ -255,7 +256,7 @@ SYSCTL.peripheral.$assign    = "SYSCTL";
 
 TIMER1.$name              = "TIMER_0";
 TIMER1.profile            = "Basic_Periodic";
-TIMER1.peripheral.$assign = "TIMG8";
+TIMER1.peripheral.$assign = "TIMG6";
 
 UART1.$name                    = "UART_0";
 UART1.targetBaudRate           = 115200;
@@ -286,5 +287,4 @@ UART2.rxPinConfig.$name                = "ti_driverlib_gpio_GPIOPinGeneric16";
  * re-solve from scratch.
  */
 Board.peripheral.$suggestSolution                   = "DEBUGSS";
-PWM2.peripheral.$suggestSolution                    = "TIMA1";
 SPI1.DMA_CHANNEL_EVENT1.peripheral.$suggestSolution = "DMA_CH3";

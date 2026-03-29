@@ -11,8 +11,8 @@
 // Index 0: LED boost converter (voltage control)
 // Index 1: LED1 current control
 static const PWM_Config _pwm_outputs[2] = {
-    {VOLTAGE_CONTROL_INST, DL_TIMER_CC_0_INDEX, 0},  // boost converter → voltage
-    {CURRENT_CONTROL_INST, DL_TIMER_CC_0_INDEX, 0},  // LED1             → current
+    {VOLTAGE_CONTROL_INST, GPIO_VOLTAGE_CONTROL_C0_IDX, 0},  // boost converter → voltage
+    {CURRENT_CONTROL_INST, GPIO_CURRENT_CONTROL_C0_IDX, 0},  // LED1             → current
 };
 // ─────────────────────────────────────────────
 // Current Lookup Tables
@@ -126,15 +126,24 @@ static uint16_t _binary_search_descending(uint16_t value, const uint16_t *LUT, u
 // ─────────────────────────────────────────────
 
 void set_pwm_duty_cycle(const PWM_Config *pwm_channel, uint16_t duty_cycle) {
-    DL_TimerG_stopCounter(pwm_channel->TIMER);
 
-    DL_TimerG_setCaptureCompareValue(
-        pwm_channel->TIMER,
-        100 - duty_cycle,
-        pwm_channel->CC_INDEX
-    );
-
-    DL_TimerG_startCounter(pwm_channel->TIMER);
+    if(pwm_channel == &_pwm_outputs[0]){
+        DL_TimerA_stopCounter(pwm_channel->TIMER);
+        DL_TimerA_setCaptureCompareValue(
+            pwm_channel->TIMER,
+            100 - duty_cycle,
+            pwm_channel->CC_INDEX
+        );
+        DL_TimerA_startCounter(pwm_channel->TIMER);
+    } else {
+        DL_TimerA_stopCounter(pwm_channel->TIMER);
+        DL_TimerA_setCaptureCompareValue(
+            pwm_channel->TIMER,
+            100 - duty_cycle,
+            pwm_channel->CC_INDEX
+        );
+        DL_TimerA_startCounter(pwm_channel->TIMER);
+    } 
 }
 
 // ─────────────────────────────────────────────
