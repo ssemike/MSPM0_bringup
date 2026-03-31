@@ -243,3 +243,50 @@ void I2C_0_INST_IRQHandler(void) {
 void I2C_1_INST_IRQHandler(void) {
     Shared_I2C_IRQHandler(I2C_1_INST);
 }
+
+
+bool I2C_TryAddress10(I2C_Regs *i2c, uint16_t dev_addr)
+{
+    if (dev_addr > 0x3FF) return false;
+
+    uint8_t dummy = 0x00;
+
+    gI2cControllerStatus = I2C_STATUS_IDLE;
+    DL_I2C_flushControllerTXFIFO(i2c);
+
+    // Switch to 10-bit addressing mode
+    DL_I2C_setControllerAddressingMode(i2c, DL_I2C_CONTROLLER_ADDRESSING_MODE_10_BIT);
+
+    while (!(DL_I2C_getControllerStatus(i2c) & DL_I2C_CONTROLLER_STATUS_IDLE));
+
+    DL_I2C_enableInterrupt(i2c, DL_I2C_INTERRUPT_CONTROLLER_TXFIFO_TRIGGER);
+
+    DL_I2C_fillControllerTXFIFO(i2c, &dummy, 1);
+
+    // Pass full 10-bit address directly - hardware handles the framing
+    DL_I2C_startControllerTransfer(i2c, dev_addr, DL_I2C_CONTROLLER_DIRECTION_TX, 1);
+
+    while ((gI2cControllerStatus != I2C_STATUS_TX_COMPLETE) &&
+           (gI2cControllerStatus != I2C_STATUS_ERROR)) {
+        __WFE();
+    }
+
+    while (DL_I2C_getControllerStatus(i2c) & DL_I2C_CONTROLLER_STATUS_BUSY_BUS);
+
+    bool success = (gI2cControllerStatus == I2C_STATUS_TX_COMPLETE);
+
+    if (!success) {
+        DL_I2C_clearInterruptStatus(i2c, DL_I2C_INTERRUPT_CONTROLLER_NACK |
+                                          DL_I2C_INTERRUPT_CONTROLLER_ARBITRATION_LOST);
+    }
+
+    DL_I2C_flushControllerTXFIFO(i2c);
+    gI2cControllerStatus = I2C_STATUS_IDLE;
+
+    // Restore 7-bit addressing mode for other devices on the bus
+    DL_I2C_setControllerAddressingMode(i2c, DL_I2C_CONTROLLER_ADDRESSING_MODE_7_BIT);
+
+    delay_cycles(1000);
+
+    return success;
+}

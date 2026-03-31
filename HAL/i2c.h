@@ -49,4 +49,6 @@ unsigned char CRC8(unsigned char *ptr, unsigned char len);
 // Calculate checksum for RAM writes
 unsigned char Checksum(unsigned char *ptr, unsigned char len);
 
+bool I2C_TryAddress10(I2C_Regs *bus, uint16_t addr);
+
 #endif /* I2C_H_ */

@@ -9,6 +9,7 @@
 #include "HAL/spi_mem.h"
 #include "ics/MB85RS/mb85rs.h"
 #include "BoardAPI.h"
+#include "HAL/i2c.h"
 
 extern volatile bool gauge_monitor_active;
 extern volatile bool bq_monitor_active; 
@@ -893,3 +894,33 @@ void cmd_pir(char *args) {
     }
 }
  
+void cmd_i2cscan10(char *args) {
+    char *tokens[1];
+    int tokenCount = CLI_Tokenize(args, tokens, 1);
+
+    I2C_Regs *targetBus;
+    int busNum = (tokenCount > 0) ? atoi(tokens[0]) : 0;
+
+    if (busNum == 0)      targetBus = I2C_0_INST;
+    else if (busNum == 1) targetBus = I2C_1_INST;
+    else {
+        uart_printf("Invalid bus. Use 0 or 1.\n");
+        return;
+    }
+
+    uart_printf("Scanning I2C Bus %d (10-bit)...\n", busNum);
+    uint8_t foundCount = 0;
+
+    for (uint16_t addr = 0x000; addr <= 0x3FF; addr++) {
+        if (I2C_TryAddress10(targetBus, addr)) {
+            uart_printf("  Found device at 0x%03X\n", addr);
+            foundCount++;
+        }
+    }
+
+    if (foundCount == 0) {
+        uart_printf("No devices found.\n");
+    } else {
+        uart_printf("Scan complete. %d device(s) found.\n", foundCount);
+    }
+}

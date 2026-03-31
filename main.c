@@ -19,6 +19,7 @@ void setupCLI(void) {
     CLI_RegisterCommand("help", cmd_help, "Show available commands");
     CLI_RegisterCommand("pwr",  cmd_pwr,  "Control power rails: 3v8, lora, lte, wifi, stm");
     CLI_RegisterCommand("i2cscan", cmd_i2cscan, "Scan I2C bus: i2cscan <0|1>");
+    CLI_RegisterCommand("i2cscan10", cmd_i2cscan10, "Scan 10bit I2C bus: i2cscan10 <0|1>");
     CLI_RegisterCommand("hall", cmd_hall, "Hall sensor: hall <pwr|status>");
     CLI_RegisterCommand("bq", cmd_bq, "BQ25628E charger control - type bq for full help");
     CLI_RegisterCommand("spi", cmd_spi, "SPI Master tx_view, tx_write, test");
