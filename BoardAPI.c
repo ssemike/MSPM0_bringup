@@ -151,16 +151,16 @@ void set_pwm_duty_cycle(const PWM_Config *pwm_channel, uint16_t duty_cycle) {
 // ─────────────────────────────────────────────
 
 void LED_set_voltage(uint16_t voltage) {
-    // Search the measured boost voltage table for the closest match.
-    // Table is descending so we use the descending binary search.
-    uint16_t index = _binary_search_descending(
-        voltage, output_voltages_boost_mV, MAX_DUTY_CYCLES_BOOST
-    );
+    const uint16_t LED_VMAX = 11540;
+    const uint16_t v_d = 92;
+    
+    uint16_t duty_cycle = (LED_VMAX - voltage) / v_d;
 
-    // Record the actual voltage the LUT entry corresponds to
-    global_led_voltage = output_voltages_boost_mV[index];
+    if(duty_cycle > 99) duty_cycle = 99;
+    if(duty_cycle < 1)  duty_cycle = 1;
 
-    set_pwm_duty_cycle(&_pwm_outputs[0], duty_cycles_boost[index]);
+    global_led_voltage = voltage;
+    set_pwm_duty_cycle(&_pwm_outputs[0], duty_cycle);
 }
 
 uint16_t LED_get_voltage(void) {
