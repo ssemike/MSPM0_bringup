@@ -76,6 +76,11 @@
 /* : NTC Control 0 (TS pin) */
 #define BQ25628E_NTC0_TS_IGNORE (1u << 7)
 
+/* : Charger Control 0 (Watchdog bits [1:0]) */
+#define BQ25628E_CTRL0_WATCHDOG_MASK  (3u << 0)
+#define BQ25628E_CTRL0_WATCHDOG_DIS   (0u << 0) // 00b = Disable
+
+
 /* -------------------------------------------------------------------------- */
 /* Public API                                                                 */
 /* -------------------------------------------------------------------------- */
@@ -104,7 +109,7 @@ void BQ25628E_Set_ChargerEnable(bool enable);
 void BQ25628E_Set_HIZ(bool enable);
 void BQ25628E_Set_TS_Ignore(bool ignore);           
 void BQ25628E_Set_PeakDischarge_6A(void);  
-
+void BQ25628E_Disable_Watchdog(void);
 
 /* -------------------------------------------------------------------------- */
 /* Low-level access (required for CLI dump/monitor/read/write)                */

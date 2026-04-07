@@ -159,6 +159,7 @@ void cmd_bq(char *args) {
 
 /* Charger initialization */
     if (strcmp(sub, "init") == 0) {
+        DL_GPIO_setPins(DIGITAL_OUTPUT_PORTB_PORT, DIGITAL_OUTPUT_PORTB_CHARGER_EN_PIN); 
         // Pre-check device presence
         uart_printf("Checking for BQ25628E...\n");
         if (!I2C_TryAddress(I2C_0_INST, BQ25628E_I2C_ADDR)) {
