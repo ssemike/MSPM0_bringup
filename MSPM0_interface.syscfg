@@ -252,6 +252,7 @@ SPI2.peripheral.cs1Pin.$assign             = "PB27";
 SPI2.cs1PinConfig.$name                    = "ti_driverlib_gpio_GPIOPinGeneric8";
 
 SYSCTL.forceDefaultClkConfig = true;
+SYSCTL.VDD                   = 3;
 SYSCTL.peripheral.$assign    = "SYSCTL";
 
 TIMER1.$name              = "TIMER_0";
