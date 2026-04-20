@@ -1,7 +1,7 @@
 # FIXED
 
 ics/MB85RS/mb85rs.o: ../ics/MB85RS/mb85rs.c ../ics/MB85RS/mb85rs.h \
- C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/spi_mem.h \
+ C:/Users/Admin/Desktop/PIR\ sensor\ tester/MSPM0_bringup/HAL/spi_mem.h \
  ti_msp_dl_config.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/msp.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/DeviceFamily.h \
@@ -86,7 +86,7 @@ ics/MB85RS/mb85rs.o: ../ics/MB85RS/mb85rs.c ../ics/MB85RS/mb85rs.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_interrupt.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_systick.h
 ../ics/MB85RS/mb85rs.h:
-C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/spi_mem.h:
+C:/Users/Admin/Desktop/PIR\ sensor\ tester/MSPM0_bringup/HAL/spi_mem.h:
 ti_msp_dl_config.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/msp.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/DeviceFamily.h:

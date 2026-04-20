@@ -9,6 +9,7 @@
 "./ics/BQ25628/BQ25628_functions.o"
 "./ics/BQ27Z7/BQ27Z7_functions.o"
 "./ics/BQ27Z7/gauge.o"
+"./ics/EXCELITAS/pyd1588.o"
 "./ics/MB85RS/mb85rs.o"
 -l"./device_linker.cmd"
 -ldevice.cmd.genlibs

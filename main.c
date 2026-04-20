@@ -23,6 +23,7 @@ void setupCLI(void) {
     CLI_RegisterCommand("spi", cmd_spi, "SPI Master tx_view, tx_write, test");
     CLI_RegisterCommand("gauge",   cmd_gauge,   "BQ27Z746 gauge — type gauge for help");
     CLI_RegisterCommand("fram", cmd_fram, "MB85RS2MTA FRAM - type fram for help");
+    CLI_RegisterCommand("pir",     cmd_pir_2,     "PIR monitor - type pir for full help");
 }
 
 

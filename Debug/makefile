@@ -21,6 +21,7 @@ ORDERED_OBJS += \
 "./ics/BQ25628/BQ25628_functions.o" \
 "./ics/BQ27Z7/BQ27Z7_functions.o" \
 "./ics/BQ27Z7/gauge.o" \
+"./ics/EXCELITAS/pyd1588.o" \
 "./ics/MB85RS/mb85rs.o" \
 $(GEN_CMDS__FLAG) \
 -Wl,-ldevice.cmd.genlibs \
@@ -37,11 +38,13 @@ RMDIR := RMDIR /S/Q
 -include HAL/subdir_vars.mk
 -include ics/BQ25628/subdir_vars.mk
 -include ics/BQ27Z7/subdir_vars.mk
+-include ics/EXCELITAS/subdir_vars.mk
 -include ics/MB85RS/subdir_vars.mk
 -include subdir_rules.mk
 -include HAL/subdir_rules.mk
 -include ics/BQ25628/subdir_rules.mk
 -include ics/BQ27Z7/subdir_rules.mk
+-include ics/EXCELITAS/subdir_rules.mk
 -include ics/MB85RS/subdir_rules.mk
 -include objects.mk
 
@@ -145,18 +148,16 @@ all: $(OBJS) $(GEN_CMDS)
 
 # Tool invocations
 HW_SW_interface_CCS.out: $(OBJS) $(GEN_CMDS)
-	@echo 'Building target: "$@"'
-	@echo 'Invoking: Arm Linker'
-	"C:/ti/ccs2031/ccs/tools/compiler/ti-cgt-armllvm_4.0.4.LTS/bin/tiarmclang.exe" @"device.opt"  -march=thumbv6m -mcpu=cortex-m0plus -mfloat-abi=soft -mlittle-endian -mthumb -O2 -gdwarf-3 -Wl,-m"HW_SW_interface_CCS.map" -Wl,-i"C:/ti/mspm0_sdk_2_09_00_01/source" -Wl,-i"C:/Users/Admin/Desktop/HW_SW_interface_CCS" -Wl,-i"C:/Users/Admin/Desktop/HW_SW_interface_CCS/Debug/syscfg" -Wl,-i"C:/ti/ccs2031/ccs/tools/compiler/ti-cgt-armllvm_4.0.4.LTS/lib" -Wl,--diag_wrap=off -Wl,--display_error_number -Wl,--warn_sections -Wl,--xml_link_info="HW_SW_interface_CCS_linkInfo.xml" -Wl,--rom_model -o "HW_SW_interface_CCS.out" $(ORDERED_OBJS)
+	@echo 'Arm Linker - building target: "$@"'
+	"C:/ti/ccs2031/ccs/tools/compiler/ti-cgt-armllvm_4.0.4.LTS/bin/tiarmclang.exe" @"device.opt"  -march=thumbv6m -mcpu=cortex-m0plus -mfloat-abi=soft -mlittle-endian -mthumb -O2 -gdwarf-3 -Wl,-m"HW_SW_interface_CCS.map" -Wl,-i"C:/ti/mspm0_sdk_2_09_00_01/source" -Wl,-i"C:/Users/Admin/Desktop/PIR sensor tester/MSPM0_bringup" -Wl,-i"C:/Users/Admin/Desktop/PIR sensor tester/MSPM0_bringup/Debug/syscfg" -Wl,-i"C:/ti/ccs2031/ccs/tools/compiler/ti-cgt-armllvm_4.0.4.LTS/lib" -Wl,--diag_wrap=off -Wl,--display_error_number -Wl,--warn_sections -Wl,--xml_link_info="HW_SW_interface_CCS_linkInfo.xml" -Wl,--rom_model -o "HW_SW_interface_CCS.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: "$@"'
 	@echo ' '
 
 # Other Targets
 clean:
 	-$(RM) $(GEN_MISC_FILES__QUOTED)$(GEN_FILES__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "ti_msp_dl_config.o" "startup_mspm0g350x_ticlang.o" "functions.o" "main.o" "HAL\i2c.o" "HAL\spi_master.o" "HAL\spi_mem.o" "HAL\uart.o" "ics\BQ25628\BQ25628_functions.o" "ics\BQ27Z7\BQ27Z7_functions.o" "ics\BQ27Z7\gauge.o" "ics\MB85RS\mb85rs.o" 
-	-$(RM) "ti_msp_dl_config.d" "startup_mspm0g350x_ticlang.d" "functions.d" "main.d" "HAL\i2c.d" "HAL\spi_master.d" "HAL\spi_mem.d" "HAL\uart.d" "ics\BQ25628\BQ25628_functions.d" "ics\BQ27Z7\BQ27Z7_functions.d" "ics\BQ27Z7\gauge.d" "ics\MB85RS\mb85rs.d" 
-	-@echo 'Finished clean'
+	-$(RM) "ti_msp_dl_config.o" "startup_mspm0g350x_ticlang.o" "functions.o" "main.o" "HAL\i2c.o" "HAL\spi_master.o" "HAL\spi_mem.o" "HAL\uart.o" "ics\BQ25628\BQ25628_functions.o" "ics\BQ27Z7\BQ27Z7_functions.o" "ics\BQ27Z7\gauge.o" "ics\EXCELITAS\pyd1588.o" "ics\MB85RS\mb85rs.o" 
+	-$(RM) "ti_msp_dl_config.d" "startup_mspm0g350x_ticlang.d" "functions.d" "main.d" "HAL\i2c.d" "HAL\spi_master.d" "HAL\spi_mem.d" "HAL\uart.d" "ics\BQ25628\BQ25628_functions.d" "ics\BQ27Z7\BQ27Z7_functions.d" "ics\BQ27Z7\gauge.d" "ics\EXCELITAS\pyd1588.d" "ics\MB85RS\mb85rs.d" 
 	-@echo ' '
 
 .PHONY: all clean dependents

@@ -2,7 +2,7 @@
 
 ics/BQ27Z7/BQ27Z7_functions.o: ../ics/BQ27Z7/BQ27Z7_functions.c \
  ../ics/BQ27Z7/BQ27Z7_functions.h \
- C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/i2c.h \
+ C:/Users/Admin/Desktop/PIR\ sensor\ tester/MSPM0_bringup/HAL/i2c.h \
  ti_msp_dl_config.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/msp.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/DeviceFamily.h \
@@ -88,7 +88,7 @@ ics/BQ27Z7/BQ27Z7_functions.o: ../ics/BQ27Z7/BQ27Z7_functions.c \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_systick.h \
  ../ics/BQ27Z7/gauge.h
 ../ics/BQ27Z7/BQ27Z7_functions.h:
-C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/i2c.h:
+C:/Users/Admin/Desktop/PIR\ sensor\ tester/MSPM0_bringup/HAL/i2c.h:
 ti_msp_dl_config.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/msp.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/DeviceFamily.h:

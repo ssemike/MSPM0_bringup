@@ -8,6 +8,7 @@
 #include "ics/BQ27Z7/BQ27Z7_functions.h"
 #include "HAL/spi_mem.h"
 #include "ics/MB85RS/mb85rs.h"
+#include "ics/EXCELITAS/pyd1588.h"
 
 extern volatile bool gauge_monitor_active;
 extern volatile bool bq_monitor_active; 
@@ -780,5 +781,127 @@ void cmd_gauge(char *args)
 
     else {
         uart_printf("Unknown gauge sub-command. Type 'gauge' for help.\n");
+    }
+}
+
+typedef struct {
+    bool initialized;
+    uint32_t last_config;
+} PYD_State_t;
+
+static PYD_State_t gPYD2 = {0};
+static bool pir2_monitor_active = false;
+
+static void pir2_print_help(void) {
+    uart_printf("PYD1588 Usage:\n");
+    uart_printf("  pir init\n");
+    uart_printf("  pir conf <threshold> <blind> <pulses> <window>\n");
+    uart_printf("     threshold : 0-255\n");
+    uart_printf("     blind     : 0-15 (0.5s to 8s)\n");
+    uart_printf("     pulses    : 1-4\n");
+    uart_printf("     window    : 0-3 (2s, 4s, 6s, 8s)\n");
+    uart_printf("  pir status\n");
+    uart_printf("  pir monitor\n");
+    uart_printf("  pir reset\n");
+}
+
+void cmd_pir_2(char *args) {
+    char *tokens[6];
+    int tokenCount = CLI_Tokenize(args, tokens, 6);
+
+    if (tokenCount == 0) {
+        pir2_print_help();
+        return;
+    }
+
+    char *sub = tokens[0];
+
+    // ── pir2 init ──────────────────────────────────
+    if (strcmp(sub, "init") == 0) {
+        // We call the driver's initialization function directly.
+        // This uses the PIR_INIT_VALUE (Threshold 50, etc.) defined in the header.
+        if (PIR_init() == -1) { 
+            uart_printf("[PYD2] Init failed - Check wiring or power\n");
+            gPYD2.initialized = false;
+            return;
+        } else {
+            uart_printf("[PYD2] Init passed\n");
+            
+            // Sync our global state tracking to the driver's default
+            gPYD2.last_config = PIR_INIT_VALUE;
+            gPYD2.initialized = true;
+        }
+    }
+
+    // ── pir2 init <threshold> <blind> <pulses> <window> ──
+    else if (strcmp(sub, "conf") == 0) {
+        if (tokenCount < 5) {
+            uart_printf("[PYD2] init requires: threshold blind pulses window\n");
+            return;
+        }
+
+        uint32_t threshold = (uint32_t)atoi(tokens[1]) & 0xFF;
+        uint32_t blind     = (uint32_t)atoi(tokens[2]) & 0x0F;
+        uint32_t pulses    = (uint32_t)(atoi(tokens[3]) - 1) & 0x03; // 1-4 -> 0-3
+        uint32_t window    = (uint32_t)atoi(tokens[4]) & 0x03;
+
+        // Pack bits per PYD1588 datasheet:
+        // [24:17] Threshold | [16:13] Blind | [12:11] Pulse | [10:9] Window | [8:0] Defaults
+        uint32_t config = (threshold << 17) | 
+                          (blind     << 13) | 
+                          (pulses    << 11) | 
+                          (window    << 9)  | 
+                          0x00; // Filter Source (0), Mode (00), Reserved (00000)
+
+        uart_printf("[PYD2] Config Word: 0x%08X\n", config);
+        
+        PIR_writeConfig(config);
+        gPYD2.last_config = config;
+        gPYD2.initialized = true;
+        
+        uart_printf("[PYD2] Initialized. Thresh: %d, Blind: %d, Pulses: %d, Window: %d\n", 
+                    threshold, blind, pulses + 1, window);
+    }
+
+    // ── pir2 status ────────────────────────────────
+    else if (strcmp(sub, "status") == 0) {
+        if (!gPYD2.initialized) {
+            uart_printf("[PYD2] Run 'pir2 init' first.\n");
+            return;
+        }
+
+        uint32_t statcfg = 0;
+        int adc_val = PIR_readData(&statcfg);
+
+        uart_printf("[PYD2] Status:\n");
+        uart_printf("  ADC Value    : %d\n", adc_val);
+        uart_printf("  Config Read  : 0x%08X\n", statcfg & 0x1FFFFFF);
+        uart_printf("  Config Match : %s\n", 
+                    ((statcfg & 0x1FFFFFF) == (gPYD2.last_config & 0x1FFFFFF)) ? "OK" : "MISMATCH");
+    }
+
+    // ── pir2 monitor ───────────────────────────────
+    else if (strcmp(sub, "monitor") == 0) {
+        if (!gPYD2.initialized) {
+            uart_printf("[PYD2] Run 'pir2 init' first.\n");
+            return;
+        }
+        pir2_monitor_active = true;
+        uart_printf("[PYD2] Monitor active. Send any key to stop.\n");
+        uart_printf("%-12s %-12s\n", "ADC Result", "Config Bits");
+        uart_printf("%-12s %-12s\n", "----------", "-----------");
+    }
+
+    // ── pir2 reset ─────────────────────────────────
+    else if (strcmp(sub, "reset") == 0) {
+        pir2_monitor_active = false;
+        PIR_init(); // Uses your driver's default PIR_INIT_VALUE
+        gPYD2.initialized = false;
+        uart_printf("[PYD2] Reset complete.\n");
+    }
+
+    else {
+        uart_printf("[PYD2] Unknown sub-command '%s'\n", sub);
+        pir2_print_help();
     }
 }

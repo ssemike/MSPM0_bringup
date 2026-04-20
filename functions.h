@@ -29,4 +29,6 @@ void cmd_spi(char *args);
 void cmd_gauge(char *args);
 
 void cmd_fram(char *args);
+
+void cmd_pir_2(char *args);
 #endif /* FUNCTIONS_H_ */
