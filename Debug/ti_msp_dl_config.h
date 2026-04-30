@@ -77,37 +77,35 @@ extern "C" {
 
 
 
-/* Defines for VOLTAGE_CONTROL */
-#define VOLTAGE_CONTROL_INST                                               TIMA0
-#define VOLTAGE_CONTROL_INST_IRQHandler                         TIMA0_IRQHandler
-#define VOLTAGE_CONTROL_INST_INT_IRQN                           (TIMA0_INT_IRQn)
-#define VOLTAGE_CONTROL_INST_CLK_FREQ                                    4000000
+/* Defines for BOOST_CONTROL */
+#define BOOST_CONTROL_INST                                                 TIMA0
+#define BOOST_CONTROL_INST_IRQHandler                           TIMA0_IRQHandler
+#define BOOST_CONTROL_INST_INT_IRQN                             (TIMA0_INT_IRQn)
+#define BOOST_CONTROL_INST_CLK_FREQ                                      4000000
 /* GPIO defines for channel 0 */
-#define GPIO_VOLTAGE_CONTROL_C0_PORT                                       GPIOA
-#define GPIO_VOLTAGE_CONTROL_C0_PIN                               DL_GPIO_PIN_21
-#define GPIO_VOLTAGE_CONTROL_C0_IOMUX                            (IOMUX_PINCM46)
-#define GPIO_VOLTAGE_CONTROL_C0_IOMUX_FUNC             IOMUX_PINCM46_PF_TIMA0_CCP0
-#define GPIO_VOLTAGE_CONTROL_C0_IDX                          DL_TIMER_CC_0_INDEX
+#define GPIO_BOOST_CONTROL_C0_PORT                                         GPIOA
+#define GPIO_BOOST_CONTROL_C0_PIN                                 DL_GPIO_PIN_21
+#define GPIO_BOOST_CONTROL_C0_IOMUX                              (IOMUX_PINCM46)
+#define GPIO_BOOST_CONTROL_C0_IOMUX_FUNC             IOMUX_PINCM46_PF_TIMA0_CCP0
+#define GPIO_BOOST_CONTROL_C0_IDX                            DL_TIMER_CC_0_INDEX
+/* GPIO defines for channel 2 */
+#define GPIO_BOOST_CONTROL_C2_PORT                                         GPIOB
+#define GPIO_BOOST_CONTROL_C2_PIN                                 DL_GPIO_PIN_17
+#define GPIO_BOOST_CONTROL_C2_IOMUX                              (IOMUX_PINCM43)
+#define GPIO_BOOST_CONTROL_C2_IOMUX_FUNC             IOMUX_PINCM43_PF_TIMA0_CCP2
+#define GPIO_BOOST_CONTROL_C2_IDX                            DL_TIMER_CC_2_INDEX
 
-/* Defines for CURRENT_CONTROL */
-#define CURRENT_CONTROL_INST                                               TIMA1
-#define CURRENT_CONTROL_INST_IRQHandler                         TIMA1_IRQHandler
-#define CURRENT_CONTROL_INST_INT_IRQN                           (TIMA1_INT_IRQn)
-#define CURRENT_CONTROL_INST_CLK_FREQ                                    4000000
-/* GPIO defines for channel 0 */
-#define GPIO_CURRENT_CONTROL_C0_PORT                                       GPIOB
-#define GPIO_CURRENT_CONTROL_C0_PIN                               DL_GPIO_PIN_17
-#define GPIO_CURRENT_CONTROL_C0_IOMUX                            (IOMUX_PINCM43)
-#define GPIO_CURRENT_CONTROL_C0_IOMUX_FUNC             IOMUX_PINCM43_PF_TIMA1_CCP0
-#define GPIO_CURRENT_CONTROL_C0_IDX                          DL_TIMER_CC_0_INDEX
-
-
-
-/* Defines for TIMER_0 */
-#define TIMER_0_INST                                                     (TIMG6)
-#define TIMER_0_INST_IRQHandler                                 TIMG6_IRQHandler
-#define TIMER_0_INST_INT_IRQN                                   (TIMG6_INT_IRQn)
-#define TIMER_0_INST_LOAD_VALUE                                         (62499U)
+/* Defines for FLASH_CONTROL */
+#define FLASH_CONTROL_INST                                                 TIMA1
+#define FLASH_CONTROL_INST_IRQHandler                           TIMA1_IRQHandler
+#define FLASH_CONTROL_INST_INT_IRQN                             (TIMA1_INT_IRQn)
+#define FLASH_CONTROL_INST_CLK_FREQ                                       500000
+/* GPIO defines for channel 1 */
+#define GPIO_FLASH_CONTROL_C1_PORT                                         GPIOB
+#define GPIO_FLASH_CONTROL_C1_PIN                                 DL_GPIO_PIN_18
+#define GPIO_FLASH_CONTROL_C1_IOMUX                              (IOMUX_PINCM44)
+#define GPIO_FLASH_CONTROL_C1_IOMUX_FUNC             IOMUX_PINCM44_PF_TIMA1_CCP1
+#define GPIO_FLASH_CONTROL_C1_IDX                            DL_TIMER_CC_1_INDEX
 
 
 
@@ -234,13 +232,17 @@ extern "C" {
 
 /* Defines for PIR_TRIGGER: GPIOA.17 with pinCMx 39 on package pin 10 */
 #define EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT                              (GPIOA)
+// pins affected by this interrupt request:["PIR_TRIGGER"]
+#define EXTERNAL_INTERRUPT_GPIOA_INT_IRQN                       (GPIOA_INT_IRQn)
+#define EXTERNAL_INTERRUPT_GPIOA_INT_IIDX       (DL_INTERRUPT_GROUP1_IIDX_GPIOA)
+#define EXTERNAL_INTERRUPT_PIR_TRIGGER_IIDX                 (DL_GPIO_IIDX_DIO17)
 #define EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN                      (DL_GPIO_PIN_17)
 #define EXTERNAL_INTERRUPT_PIR_TRIGGER_IOMUX                     (IOMUX_PINCM39)
 /* Defines for CHARGER_INT: GPIOB.1 with pinCMx 13 on package pin 48 */
 #define EXTERNAL_INTERRUPT_CHARGER_INT_PORT                              (GPIOB)
 // pins affected by this interrupt request:["CHARGER_INT"]
-#define EXTERNAL_INTERRUPT_INT_IRQN                             (GPIOB_INT_IRQn)
-#define EXTERNAL_INTERRUPT_INT_IIDX             (DL_INTERRUPT_GROUP1_IIDX_GPIOB)
+#define EXTERNAL_INTERRUPT_GPIOB_INT_IRQN                       (GPIOB_INT_IRQn)
+#define EXTERNAL_INTERRUPT_GPIOB_INT_IIDX       (DL_INTERRUPT_GROUP1_IIDX_GPIOB)
 #define EXTERNAL_INTERRUPT_CHARGER_INT_IIDX                  (DL_GPIO_IIDX_DIO1)
 #define EXTERNAL_INTERRUPT_CHARGER_INT_PIN                       (DL_GPIO_PIN_1)
 #define EXTERNAL_INTERRUPT_CHARGER_INT_IOMUX                     (IOMUX_PINCM13)
@@ -279,9 +281,6 @@ extern "C" {
 /* Defines for MCU_WIFI_PON: GPIOB.15 with pinCMx 32 on package pin 3 */
 #define DIGITAL_OUTPUT_PORTB_MCU_WIFI_PON_PIN                   (DL_GPIO_PIN_15)
 #define DIGITAL_OUTPUT_PORTB_MCU_WIFI_PON_IOMUX                  (IOMUX_PINCM32)
-/* Defines for IR_SYNC: GPIOB.18 with pinCMx 44 on package pin 15 */
-#define DIGITAL_OUTPUT_PORTB_IR_SYNC_PIN                        (DL_GPIO_PIN_18)
-#define DIGITAL_OUTPUT_PORTB_IR_SYNC_IOMUX                       (IOMUX_PINCM44)
 /* Defines for IR_ENABLE: GPIOB.19 with pinCMx 45 on package pin 16 */
 #define DIGITAL_OUTPUT_PORTB_IR_ENABLE_PIN                      (DL_GPIO_PIN_19)
 #define DIGITAL_OUTPUT_PORTB_IR_ENABLE_IOMUX                     (IOMUX_PINCM45)
@@ -323,9 +322,8 @@ void SYSCFG_DL_init(void);
 void SYSCFG_DL_initPower(void);
 void SYSCFG_DL_GPIO_init(void);
 void SYSCFG_DL_SYSCTL_init(void);
-void SYSCFG_DL_VOLTAGE_CONTROL_init(void);
-void SYSCFG_DL_CURRENT_CONTROL_init(void);
-void SYSCFG_DL_TIMER_0_init(void);
+void SYSCFG_DL_BOOST_CONTROL_init(void);
+void SYSCFG_DL_FLASH_CONTROL_init(void);
 void SYSCFG_DL_I2C_0_init(void);
 void SYSCFG_DL_I2C_1_init(void);
 void SYSCFG_DL_UART_0_init(void);

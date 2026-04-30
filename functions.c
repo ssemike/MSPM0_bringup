@@ -10,10 +10,12 @@
 #include "ics/MB85RS/mb85rs.h"
 #include "BoardAPI.h"
 #include "HAL/i2c.h"
+#include "ics/ZILOG/ZDP323B.h"
+
 
 extern volatile bool gauge_monitor_active;
 extern volatile bool bq_monitor_active; 
-
+extern volatile bool pir_monitor_active;
 
 void cmd_pwr(char *args) {
     char *tokens[2];
@@ -802,7 +804,11 @@ void cmd_leds(char *args) {
                     "  led init              - initialise LED control, both outputs zeroed\n"
                     "  led voltage <mV>      - set boost converter voltage (3490 - 11330 mV)\n"
                     "  led current <mA>      - set LED current (0 - 500 mA)\n"
-                    "  led off               - safe shutdown, zeros current then voltage\n");
+                    "  led off               - safe shutdown, zeros current then voltage\n"
+                    "  led flash <ms>          - start flashing, on-time 1-10 ms\n"
+                    "  led flash stop          - stop flashing\n"
+                    );
+                    
         return;
     }
  
@@ -857,6 +863,21 @@ void cmd_leds(char *args) {
         disable_led_boost();
         uart_printf("LED off. Current zeroed then voltage zeroed.\n");
     }
+    else if (strcmp(sub, "flash") == 0) {
+    if (tokenCount < 2) {
+        uart_printf("Usage: led flash <ms>   (1 - 10 ms)\n"
+                    "       led flash stop\n");
+        return;
+    }
+    if (strcmp(tokens[1], "stop") == 0) {
+        LED_flash_stop();
+        uart_printf("Flash stopped\n");
+    } else {
+        uint16_t on_ms = (uint16_t)atoi(tokens[1]);
+        LED_flash_start(on_ms);
+        uart_printf("Flashing: on-time %d ms (ticks: %d)\n", on_ms, on_ms * 500);
+    }
+    }
     else {
         uart_printf("Unknown led sub-command. Type 'led' for help.\n");
     }
@@ -867,31 +888,183 @@ void cmd_leds(char *args) {
 // PIR Monitor Command
 // ─────────────────────────────────────────────
  
+// ─────────────────────────────────────────────
+// PIR Monitor Command
+// ─────────────────────────────────────────────
+
+static void pir_print_help(void) {
+    uart_printf("Usage:\n");
+    uart_printf("  pir init <bus> <addr> <type> <step> <threshold>\n");
+    uart_printf("     bus       : 0 or 1\n");
+    uart_printf("     addr      : 10-bit I2C address (e.g. 0x301)\n");
+    uart_printf("     type      : A B C D DIRECT\n");
+    uart_printf("     step      : 1 2 3\n");
+    uart_printf("     threshold : 0-255 (actual = value * 8 ADC counts)\n");
+    uart_printf("  pir status\n");
+    uart_printf("  pir monitor\n");
+    uart_printf("  pir reset\n");
+}
+
+static ZDP323B_FilterType parse_filter_type(const char *s) {
+    if      (strcmp(s, "A")      == 0) return ZDP323B_FILTER_TYPE_A;
+    else if (strcmp(s, "B")      == 0) return ZDP323B_FILTER_TYPE_B;
+    else if (strcmp(s, "C")      == 0) return ZDP323B_FILTER_TYPE_C;
+    else if (strcmp(s, "D")      == 0) return ZDP323B_FILTER_TYPE_D;
+    else if (strcmp(s, "DIRECT") == 0) return ZDP323B_FILTER_TYPE_DIRECT;
+    else                               return ZDP323B_FILTER_TYPE_B; // safe default
+}
+
+static ZDP323B_FilterStep parse_filter_step(int s) {
+    if      (s == 1) return ZDP323B_FILTER_STEP_1;
+    else if (s == 3) return ZDP323B_FILTER_STEP_3;
+    else             return ZDP323B_FILTER_STEP_2; // default step 2
+}
+
+static const char* filter_type_str(ZDP323B_FilterType t) {
+    switch (t) {
+        case ZDP323B_FILTER_TYPE_A:      return "A";
+        case ZDP323B_FILTER_TYPE_B:      return "B";
+        case ZDP323B_FILTER_TYPE_C:      return "C";
+        case ZDP323B_FILTER_TYPE_D:      return "D";
+        case ZDP323B_FILTER_TYPE_DIRECT: return "DIRECT";
+        default:                         return "?";
+    }
+}
+
+static const char* filter_step_str(ZDP323B_FilterStep s) {
+    switch (s) {
+        case ZDP323B_FILTER_STEP_1: return "1";
+        case ZDP323B_FILTER_STEP_2: return "2";
+        case ZDP323B_FILTER_STEP_3: return "3";
+        default:                    return "?";
+    }
+}
+
+// ─────────────────────────────────────────────
+// PIR Command
+// ─────────────────────────────────────────────
+
 void cmd_pir(char *args) {
-    char *tokens[1];
-    int tokenCount = CLI_Tokenize(args, tokens, 1);
- 
+    char *tokens[6];
+    int tokenCount = CLI_Tokenize(args, tokens, 6);
+
     if (tokenCount == 0) {
-        uart_printf("PIR Monitor CLI:\n"
-                    "  pir monitor   - print PIR_TRIGGER pin state every 200ms\n"
-                    "  pir stop      - stop monitor\n");
+        pir_print_help();
         return;
     }
- 
+
     char *sub = tokens[0];
- 
-    if (strcmp(sub, "monitor") == 0) {
-        extern volatile bool pir_monitor_active;
+
+    // ── pir init <bus> <addr> <type> <step> <threshold> ──
+    if (strcmp(sub, "init") == 0) {
+        if (tokenCount < 6) {
+            uart_printf("[PIR] init requires: bus addr type step threshold\n");
+            pir_print_help();
+            return;
+        }
+
+        int      busNum   = atoi(tokens[1]);
+        uint16_t dev_addr = (uint16_t)strtol(tokens[2], NULL, 0);
+        ZDP323B_FilterType ftype = parse_filter_type(tokens[3]);
+        ZDP323B_FilterStep fstep = parse_filter_step(atoi(tokens[4]));
+        uint8_t  threshold = (uint8_t)atoi(tokens[5]);
+
+        I2C_Regs *targetBus;
+        if      (busNum == 0) targetBus = I2C_0_INST;
+        else if (busNum == 1) targetBus = I2C_1_INST;
+        else {
+            uart_printf("[PIR] Invalid bus. Use 0 or 1.\n");
+            return;
+        }
+
+        uart_printf("[PIR] Initializing on bus %d addr 0x%03X\n", busNum, dev_addr);
+        uart_printf("[PIR] Filter: Type %s  Step %s  Threshold: %d (%d ADC counts)\n",
+                    filter_type_str(ftype),
+                    filter_step_str(fstep),
+                    threshold,
+                    threshold * 8);
+
+        I2C_Status st = ZDP323B_Init(targetBus, dev_addr, fstep, ftype, threshold);
+        if (st != I2C_SUCCESS) {
+            uart_printf("[PIR] Init failed with status %d\n", st);
+        }
+    }
+
+    // ── pir status ────────────────────────────────
+    else if (strcmp(sub, "status") == 0) {
+        if (!gPIR.initialized) {
+            uart_printf("[PIR] Not initialized. Run 'pir init' first.\n");
+            return;
+        }
+
+        int16_t peak = 0;
+        I2C_Status st = ZDP323B_ReadPeakHold(gPIR.i2c, gPIR.dev_addr, &peak);
+        if (st != I2C_SUCCESS) {
+            uart_printf("[PIR] Failed to read Peak Hold\n");
+            return;
+        }
+
+        uart_printf("[PIR] Status:\n");
+        uart_printf("  Addr       : 0x%03X\n", gPIR.dev_addr);
+        uart_printf("  Filter     : Type %s  Step %s\n",
+                    filter_type_str(gPIR.armed_cfg.filter_type),
+                    filter_step_str(gPIR.armed_cfg.filter_step));
+        uart_printf("  Threshold  : %d (%d ADC counts)\n",
+                    gPIR.armed_cfg.threshold,
+                    gPIR.armed_cfg.threshold * 8);
+        uart_printf("  Peak Hold  : %d\n", peak);
+        uart_printf("  Motion Flag: %s\n", gPIR.motion_detected ? "SET" : "clear");
+        uart_printf("  Monitor    : %s\n", pir_monitor_active   ? "running" : "stopped");
+    }
+
+    // ── pir monitor ───────────────────────────────
+    else if (strcmp(sub, "monitor") == 0) {
+        if (!gPIR.initialized) {
+            uart_printf("[PIR] Not initialized. Run 'pir init' first.\n");
+            return;
+        }
+
         pir_monitor_active = true;
-        uart_printf("PIR monitor started — type any command to stop\n");
+        uart_printf("[PIR] Monitor started. Send any key to stop.\n");
+        uart_printf("%-10s %-10s %-12s\n", "Peak Hold", "Motion",  "Threshold");
+        uart_printf("%-10s %-10s %-12s\n", "---------", "------", "---------");
     }
-    else if (strcmp(sub, "stop") == 0) {
-        extern volatile bool pir_monitor_active;
+
+    // ── pir reset ─────────────────────────────────
+    else if (strcmp(sub, "reset") == 0) {
+        if (!gPIR.initialized) {
+            uart_printf("[PIR] Not initialized.\n");
+            return;
+        }
+
+        // Stop monitor if running
         pir_monitor_active = false;
-        uart_printf("PIR monitor stopped\n");
+
+        // Write default values per datasheet section 9.4 / 13
+        ZDP323B_Config reset_cfg = {
+            .threshold   = 0x38,
+            .trigger_en  = false,
+            .filter_step = ZDP323B_FILTER_STEP_2,
+            .filter_type = ZDP323B_FILTER_TYPE_B,
+        };
+
+        uint8_t config_bytes[7];
+        ZDP323B_BuildConfigBytes(&reset_cfg, config_bytes);
+        I2C_Status st = ZDP323B_WriteConfig(gPIR.i2c, gPIR.dev_addr, config_bytes);
+        if (st != I2C_SUCCESS) {
+            uart_printf("[PIR] Reset write failed\n");
+            return;
+        }
+
+        gPIR.motion_detected = false;
+        gPIR.initialized     = false;
+
+        uart_printf("[PIR] Reset complete. Re-run 'pir init' to use.\n");
     }
+
     else {
-        uart_printf("Unknown pir sub-command. Type 'pir' for help.\n");
+        uart_printf("[PIR] Unknown sub-command '%s'\n", sub);
+        pir_print_help();
     }
 }
  

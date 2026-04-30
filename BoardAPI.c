@@ -10,9 +10,11 @@
 
 // Index 0: LED boost converter (voltage control)
 // Index 1: LED1 current control
-static const PWM_Config _pwm_outputs[2] = {
-    {VOLTAGE_CONTROL_INST, GPIO_VOLTAGE_CONTROL_C0_IDX, 0},  // boost converter → voltage
-    {CURRENT_CONTROL_INST, GPIO_CURRENT_CONTROL_C0_IDX, 0},  // LED1             → current
+static const PWM_Config _pwm_outputs[3] = {
+    {BOOST_CONTROL_INST, GPIO_BOOST_CONTROL_C0_IDX, 0},  // boost converter → voltage
+    {BOOST_CONTROL_INST, GPIO_BOOST_CONTROL_C2_IDX, 0},  // LED1             → current
+    {FLASH_CONTROL_INST, GPIO_FLASH_CONTROL_C1_IDX, 0},  // Flash LED         → current
+
 };
 // ─────────────────────────────────────────────
 // Current Lookup Tables
@@ -126,12 +128,11 @@ static uint16_t _binary_search_descending(uint16_t value, const uint16_t *LUT, u
 // ─────────────────────────────────────────────
 
 void set_pwm_duty_cycle(const PWM_Config *pwm_channel, uint16_t duty_cycle) {
-
-    if(pwm_channel == &_pwm_outputs[0]){
+    if (pwm_channel == &_pwm_outputs[2]) {
         DL_TimerA_stopCounter(pwm_channel->TIMER);
         DL_TimerA_setCaptureCompareValue(
             pwm_channel->TIMER,
-            100 - duty_cycle,
+            duty_cycle,
             pwm_channel->CC_INDEX
         );
         DL_TimerA_startCounter(pwm_channel->TIMER);
@@ -143,7 +144,7 @@ void set_pwm_duty_cycle(const PWM_Config *pwm_channel, uint16_t duty_cycle) {
             pwm_channel->CC_INDEX
         );
         DL_TimerA_startCounter(pwm_channel->TIMER);
-    } 
+    }
 }
 
 // ─────────────────────────────────────────────
@@ -211,3 +212,15 @@ void enable_led_boost(void){
 void disable_led_boost(void){
     DL_GPIO_clearPins(DIGITAL_OUTPUT_PORTB_PORT, DIGITAL_OUTPUT_PORTB_IR_ENABLE_PIN);
 };
+
+void LED_flash_start(uint16_t on_ms) {
+    if (on_ms < 1)  on_ms = 1;
+    if (on_ms > 10) on_ms = 10;
+
+    uint16_t ticks = on_ms * 500;
+    set_pwm_duty_cycle(&_pwm_outputs[2], ticks);
+}
+
+void LED_flash_stop(void) {
+    DL_TimerA_stopCounter(FLASH_CONTROL_INST);
+}

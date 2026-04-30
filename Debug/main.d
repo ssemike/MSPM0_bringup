@@ -87,7 +87,8 @@ main.o: ../main.c \
  ../HAL/i2c.h ../functions.h ../HAL/uart.h \
  ../ics/BQ25628/BQ25628_functions.h ../ics/BQ27Z7/BQ27Z7_functions.h \
  C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/i2c.h \
- ../ics/BQ27Z7/gauge.h ../HAL/spi_master.h ../HAL/spi_mem.h
+ ../ics/BQ27Z7/gauge.h ../HAL/spi_master.h ../HAL/spi_mem.h \
+ ../ics/ZILOG/ZDP323B.h
 ti_msp_dl_config.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/msp.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/DeviceFamily.h:
@@ -180,3 +181,4 @@ C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/i2c.h:
 ../ics/BQ27Z7/gauge.h:
 ../HAL/spi_master.h:
 ../HAL/spi_mem.h:
+../ics/ZILOG/ZDP323B.h:

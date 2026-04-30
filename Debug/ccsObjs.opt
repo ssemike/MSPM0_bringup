@@ -11,6 +11,7 @@
 "./ics/BQ27Z7/BQ27Z7_functions.o"
 "./ics/BQ27Z7/gauge.o"
 "./ics/MB85RS/mb85rs.o"
+"./ics/ZILOG/ZDP323B.o"
 -l"./device_linker.cmd"
 -ldevice.cmd.genlibs
 -llibc.a

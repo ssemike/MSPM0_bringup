@@ -7,6 +7,7 @@
 #include "ics/BQ27Z7/BQ27Z7_functions.h"
 #include "HAL/spi_master.h"
 #include "HAL/spi_mem.h"
+#include "ics/ZILOG/ZDP323B.h"
 
 volatile bool bq_monitor_active    = false;
 volatile bool hall_monitor_active  = false;
@@ -150,19 +151,29 @@ int main(void)
             }
         }
         if (pir_monitor_active) {
-            delay_cycles(monitor_rate * 32000);
- 
-            uint32_t pin_state = DL_GPIO_readPins(
-                EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT,
-                EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN
-            );
- 
-            uart_printf("PIR_TRIGGER: %s\n", pin_state ? "HIGH (triggered)" : "LOW (idle)");
- 
+
+            // Read Peak Hold from sensor
+            int16_t peak = 0;
+            I2C_Status st = ZDP323B_ReadPeakHold(gPIR.i2c, gPIR.dev_addr, &peak);
+
+            if (st != I2C_SUCCESS) {
+                uart_printf("[PIR] Read error during monitor\n");
+                pir_monitor_active = false;
+            } else {
+                // Check and clear motion flag atomically
+                bool motion = gPIR.motion_detected;
+                if (motion) gPIR.motion_detected = false;
+
+                uart_printf("[PIR] Peak: %5d  Threshold: ±%4d  Motion: %s\n",
+                            peak,
+                            gPIR.armed_cfg.threshold * 8,
+                            motion ? "DETECTED" : "-");
+            }
+            pir_monitor_active = false;
             if (data_received) {
                 pir_monitor_active = false;
                 get_UART_buffer(processingBuffer);
-                uart_printf("PIR monitor stopped\n");
+                uart_printf("[PIR] Monitor stopped\n");
             }
         }
     }
@@ -174,6 +185,43 @@ void UART_0_INST_IRQHandler(void)
         case DL_UART_MAIN_IIDX_RX:
             UARTReceive();
             break;
+        default:
+            break;
+    }
+}
+
+// void FLASH_CONTROL_INST_IRQHandler(void)
+// {
+//     DL_TimerG_stopCounter(FLASH_CONTROL_INST); 
+//     DL_TimerG_clearInterruptStatus(FLASH_CONTROL_INST, DL_TIMER_INTERRUPT_CC1_UP_EVENT);  
+// }
+
+// ─────────────────────────────────────────────
+// GROUP1 IRQ Handler (Handles GPIOA and GPIOB)
+// ─────────────────────────────────────────────
+
+void GROUP1_IRQHandler(void) {
+    // Determine which group source triggered the interrupt
+    switch (DL_Interrupt_getPendingGroup(DL_INTERRUPT_GROUP_1)) {
+        
+        case DL_INTERRUPT_GROUP1_IIDX_GPIOA:
+            // Now check which specific pin on Port A triggered it
+            switch (DL_GPIO_getPendingInterrupt(GPIOA)) {
+                case EXTERNAL_INTERRUPT_PIR_TRIGGER_IIDX:
+                    // 50µs pulse from ZDP323B detected
+                    pir_monitor_active = true;
+                    ZDP323B_MotionISR();
+                    break;
+                default:
+                    break;
+            }
+            break;
+
+        case DL_INTERRUPT_GROUP1_IIDX_GPIOB:
+            // Handle Port B (e.g. CHARGER_INT) if needed, or just clear it
+            DL_GPIO_getPendingInterrupt(GPIOB);
+            break;
+
         default:
             break;
     }

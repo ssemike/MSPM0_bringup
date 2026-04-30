@@ -19,6 +19,26 @@ typedef enum {
     I2C_ERROR_ARB_LOST
 } I2C_Status;
 
+/* Configuration */
+
+// Indicates status of I2C
+enum I2cControllerStatus {
+    I2C_STATUS_IDLE = 0,
+    I2C_STATUS_TX_STARTED,
+    I2C_STATUS_TX_INPROGRESS,
+    I2C_STATUS_TX_COMPLETE,
+    I2C_STATUS_RX_STARTED,
+    I2C_STATUS_RX_INPROGRESS,
+    I2C_STATUS_RX_COMPLETE,
+    I2C_STATUS_ERROR,
+} gI2cControllerStatus;
+
+// Counters and Buffers
+uint32_t gTxLen, gTxCount;
+uint8_t gTxPacket[34];
+uint8_t gRxPacket[34];
+uint32_t gRxLen, gRxCount;
+
 void i2c_init(void);
 // Shared logic for I2C Interrupts
 void Shared_I2C_IRQHandler(I2C_Regs *i2c);
@@ -49,6 +69,6 @@ unsigned char CRC8(unsigned char *ptr, unsigned char len);
 // Calculate checksum for RAM writes
 unsigned char Checksum(unsigned char *ptr, unsigned char len);
 
-bool I2C_TryAddress10(I2C_Regs *bus, uint16_t addr);
+
 
 #endif /* I2C_H_ */

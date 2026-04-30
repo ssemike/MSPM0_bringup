@@ -97,5 +97,8 @@ void enable_led_boost(void);
 //disable led boost converter
 void disable_led_boost(void);
 
+void LED_flash_start(uint16_t on_ms);
+void LED_flash_stop(void);
+
 
 #endif
