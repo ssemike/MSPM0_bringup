@@ -534,12 +534,17 @@ SYSCONFIG_WEAK void SYSCFG_DL_MCU_UART_1_init(void)
     DL_UART_Main_init(MCU_UART_1_INST, (DL_UART_Main_Config *) &gMCU_UART_1Config);
     /*
      * Configure baud rate by setting oversampling and baud rate divisors.
-     *  Target baud rate: 9600
-     *  Actual baud rate: 9600.24
+     *  Target baud rate: 115200
+     *  Actual baud rate: 115211.52
      */
     DL_UART_Main_setOversampling(MCU_UART_1_INST, DL_UART_OVERSAMPLING_RATE_16X);
-    DL_UART_Main_setBaudRateDivisor(MCU_UART_1_INST, MCU_UART_1_IBRD_32_MHZ_9600_BAUD, MCU_UART_1_FBRD_32_MHZ_9600_BAUD);
+    DL_UART_Main_setBaudRateDivisor(MCU_UART_1_INST, MCU_UART_1_IBRD_32_MHZ_115200_BAUD, MCU_UART_1_FBRD_32_MHZ_115200_BAUD);
 
+
+    /* Configure Interrupts */
+    DL_UART_Main_enableInterrupt(MCU_UART_1_INST,
+                                 DL_UART_MAIN_INTERRUPT_RX |
+                                 DL_UART_MAIN_INTERRUPT_TX);
 
 
     DL_UART_Main_enable(MCU_UART_1_INST);

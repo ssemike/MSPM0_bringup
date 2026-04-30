@@ -11,11 +11,14 @@
 #include "BoardAPI.h"
 #include "HAL/i2c.h"
 #include "ics/ZILOG/ZDP323B.h"
+#include "ics/LTR329/LTR329.h"
+#include "ics/LIS3DH/LIS3DH.h"
 
 
 extern volatile bool gauge_monitor_active;
 extern volatile bool bq_monitor_active; 
 extern volatile bool pir_monitor_active;
+extern volatile bool lis_monitor_active;
 
 void cmd_pwr(char *args) {
     char *tokens[2];
@@ -1096,5 +1099,149 @@ void cmd_i2cscan10(char *args) {
         uart_printf("No devices found.\n");
     } else {
         uart_printf("Scan complete. %d device(s) found.\n", foundCount);
+    }
+}
+
+// ─────────────────────────────────────────────
+// LTR-329ALS-01 CLI Command
+// ─────────────────────────────────────────────
+
+void cmd_ltr(char *args) {
+    char *tokens[3];
+    int tokenCount = CLI_Tokenize(args, tokens, 3);
+    extern volatile bool ltr_monitor_active;
+
+    if (tokenCount == 0) {
+        uart_printf("LTR-329ALS-01 CLI:\n"
+                    "  ltr init <bus>      - Initialize on I2C bus 0 or 1\n"
+                    "  ltr read            - One-shot CH0, CH1 and Lux read\n"
+                    "  ltr gain <val>      - Set gain: 1, 2, 4, 8, 48, 96\n"
+                    "  ltr monitor         - 200ms live telemetry\n"
+                    "  ltr stop            - Stop monitor\n");
+        return;
+    }
+
+    char *sub = tokens[0];
+
+    if (strcmp(sub, "init") == 0) {
+        int busNum = (tokenCount > 1) ? atoi(tokens[1]) : 0;
+        I2C_Regs *bus = (busNum == 1) ? I2C_1_INST : I2C_0_INST;
+        
+        if (LTR329_Init(bus)) {
+            uart_printf("LTR-329 initialized successfully on I2C%d\n", busNum);
+        } else {
+            uart_printf("ERROR: LTR-329 initialization failed\n");
+        }
+    }
+    else if (strcmp(sub, "read") == 0) {
+        uint16_t ch0, ch1;
+        if (LTR329_ReadData(&ch0, &ch1)) {
+            float lux = LTR329_CalculateLux(ch0, ch1);
+            uart_printf("CH0: %u  CH1: %u  Lux: %.2f\n", ch0, ch1, lux);
+        } else {
+            uart_printf("ERROR: Failed to read data\n");
+        }
+    }
+    else if (strcmp(sub, "gain") == 0) {
+        if (tokenCount < 2) {
+            uart_printf("Usage: ltr gain <1|2|4|8|48|96>\n");
+            return;
+        }
+        int gainVal = atoi(tokens[1]);
+        LTR329_Gain gain;
+        switch(gainVal) {
+            case 1:  gain = LTR329_GAIN_1X;  break;
+            case 2:  gain = LTR329_GAIN_2X;  break;
+            case 4:  gain = LTR329_GAIN_4X;  break;
+            case 8:  gain = LTR329_GAIN_8X;  break;
+            case 48: gain = LTR329_GAIN_48X; break;
+            case 96: gain = LTR329_GAIN_96X; break;
+            default: uart_printf("Invalid gain value\n"); return;
+        }
+        if (LTR329_SetGain(gain)) {
+            uart_printf("Gain set to %dX\n", gainVal);
+        } else {
+            uart_printf("ERROR: Failed to set gain\n");
+        }
+    }
+    else if (strcmp(sub, "monitor") == 0) {
+        ltr_monitor_active = true;
+        uart_printf("LTR monitor started — type any command to stop\n");
+    }
+    else if (strcmp(sub, "stop") == 0) {
+        ltr_monitor_active = false;
+        uart_printf("LTR monitor stopped\n");
+    }
+    else {
+        uart_printf("Unknown ltr sub-command\n");
+    }
+}
+
+void cmd_lis(char *args) {
+    char *tokens[3];
+    int tokenCount = CLI_Tokenize(args, tokens, 3);
+    extern volatile bool lis_monitor_active;
+
+    if (tokenCount == 0) {
+        uart_printf("LIS3DH CLI:\n"
+                    "  lis init <bus>      - Initialize on I2C bus 0 or 1\n"
+                    "  lis read            - One-shot X, Y, Z (mg) read\n"
+                    "  lis range <2|4|8|16>- Set full-scale range\n"
+                    "  lis monitor         - 200ms live telemetry\n"
+                    "  lis stop            - Stop monitor\n");
+        return;
+    }
+
+    char *sub = tokens[0];
+
+    if (strcmp(sub, "init") == 0) {
+        int busNum = (tokenCount > 1) ? atoi(tokens[1]) : 0;
+        I2C_Regs *bus = (busNum == 1) ? I2C_1_INST : I2C_0_INST;
+        
+        // Default to address 0x18
+        if (LIS3DH_Init(bus, LIS3DH_I2C_ADDR_0)) {
+            uart_printf("LIS3DH initialized successfully on I2C%d (addr 0x%02X)\n", busNum, LIS3DH_I2C_ADDR_0);
+        } else {
+            uart_printf("ERROR: LIS3DH initialization failed\n");
+        }
+    }
+    else if (strcmp(sub, "read") == 0) {
+        float x, y, z;
+        if (LIS3DH_ReadMg(&x, &y, &z)) {
+            uart_printf("X: %8.2f  Y: %8.2f  Z: %8.2f mg\n", x, y, z);
+        } else {
+            uart_printf("ERROR: Failed to read data\n");
+        }
+    }
+    else if (strcmp(sub, "range") == 0) {
+        if (tokenCount < 2) {
+            uart_printf("Usage: lis range <2|4|8|16>\n");
+            return;
+        }
+        int rVal = atoi(tokens[1]);
+        LIS3DH_Range range;
+        switch(rVal) {
+            case 2:  range = LIS3DH_RANGE_2G;  break;
+            case 4:  range = LIS3DH_RANGE_4G;  break;
+            case 8:  range = LIS3DH_RANGE_8G;  break;
+            case 16: range = LIS3DH_RANGE_16G; break;
+            default: uart_printf("Invalid range. Use 2, 4, 8, or 16.\n"); return;
+        }
+        if (LIS3DH_SetRange(range)) {
+            uart_printf("Range set to ±%dg\n", rVal);
+        } else {
+            uart_printf("ERROR: Failed to set range\n");
+        }
+    }
+    else if (strcmp(sub, "monitor") == 0) {
+        lis_monitor_active = true;
+        uart_printf("LIS monitor started — type any command to stop\n");
+    }
+    else if (strcmp(sub, "stop") == 0) {
+        lis_monitor_active = false;
+        uart_printf("LIS monitor stopped\n");
+    }
+    else {
+        uart_printf("Unknown lis sub-command\n");
     }
 }

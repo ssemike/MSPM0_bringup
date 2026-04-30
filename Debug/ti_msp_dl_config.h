@@ -168,9 +168,9 @@ extern "C" {
 #define GPIO_MCU_UART_1_IOMUX_TX                                 (IOMUX_PINCM17)
 #define GPIO_MCU_UART_1_IOMUX_RX_FUNC                  IOMUX_PINCM18_PF_UART1_RX
 #define GPIO_MCU_UART_1_IOMUX_TX_FUNC                  IOMUX_PINCM17_PF_UART1_TX
-#define MCU_UART_1_BAUD_RATE                                              (9600)
-#define MCU_UART_1_IBRD_32_MHZ_9600_BAUD                                   (208)
-#define MCU_UART_1_FBRD_32_MHZ_9600_BAUD                                    (21)
+#define MCU_UART_1_BAUD_RATE                                            (115200)
+#define MCU_UART_1_IBRD_32_MHZ_115200_BAUD                                  (17)
+#define MCU_UART_1_FBRD_32_MHZ_115200_BAUD                                  (23)
 
 
 

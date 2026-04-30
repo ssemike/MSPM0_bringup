@@ -83,14 +83,14 @@ void BQ25628E_UpdateTelemetry(void) {
     g_vbus_mV = (uint16_t) roundf(vbus_code * 3.97f);
 
     raw = BQ25628E_ReadReg16(BQ25628E_REG_ADC_IBUS);
-    int16_t ibus_code = (int16_t) (raw >> 1);
+    int16_t ibus_code = ((int16_t)raw) >> 1;
     g_ibus_mA = ibus_code * 2;
 
     raw = BQ25628E_ReadReg16(BQ25628E_REG_ADC_IBAT);
     if (raw == 0x8000) {
         g_ibat_mA = 0;
     } else {
-        int16_t ibat_code = (int16_t) (raw >> 2);
+        int16_t ibat_code = ((int16_t)raw) >> 2;
         g_ibat_mA = ibat_code * 4;
     }
 }

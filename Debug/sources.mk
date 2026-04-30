@@ -122,6 +122,9 @@ SUBDIRS := \
 HAL \
 ics/BQ25628 \
 ics/BQ27Z7 \
+ics/LIS3DH \
+ics/LTR329 \
 ics/MB85RS \
+ics/RAK \
 ics/ZILOG \
 

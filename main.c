@@ -8,11 +8,17 @@
 #include "HAL/spi_master.h"
 #include "HAL/spi_mem.h"
 #include "ics/ZILOG/ZDP323B.h"
+#include "ics/LTR329/LTR329.h"
+#include "ics/LIS3DH/LIS3DH.h"
+#include "ics/RAK/RAK3172.h"
+
 
 volatile bool bq_monitor_active    = false;
 volatile bool hall_monitor_active  = false;
 volatile bool gauge_monitor_active = false;
 volatile bool pir_monitor_active   = false;
+volatile bool ltr_monitor_active   = false;
+volatile bool lis_monitor_active   = false;
 volatile uint32_t monitor_rate = 2000; 
 volatile uint32_t hall_monitor_counter = 0;
 
@@ -28,7 +34,11 @@ void setupCLI(void) {
     CLI_RegisterCommand("fram", cmd_fram, "MB85RS2MTA FRAM - type fram for help");
     CLI_RegisterCommand("led",    cmd_leds,    "LED control - type led for full help");
     CLI_RegisterCommand("pir",     cmd_pir,     "PIR monitor - type pir for full help");
+    CLI_RegisterCommand("ltr",     cmd_ltr,     "LTR-329 ALS sensor - type ltr for help");
+    CLI_RegisterCommand("lis",     cmd_lis,     "LIS3DH accelerometer - type lis for help");
+    CLI_RegisterCommand("rak",     cmd_rak,     "RAK3172 LoRaWAN module CLI");
 }
+
 
 
 int main(void)
@@ -176,6 +186,41 @@ int main(void)
                 uart_printf("[PIR] Monitor stopped\n");
             }
         }
+        if (ltr_monitor_active) {
+            delay_cycles(monitor_rate * 32000); // 200ms
+
+            uint16_t ch0, ch1;
+            if (LTR329_ReadData(&ch0, &ch1)) {
+                float lux = LTR329_CalculateLux(ch0, ch1);
+                uart_printf("[LTR] CH0: %5u  CH1: %5u  Lux: %7.2f\n", ch0, ch1, lux);
+            } else {
+                uart_printf("[LTR] Read error\n");
+                ltr_monitor_active = false;
+            }
+
+            if (data_received) {
+                ltr_monitor_active = false;
+                get_UART_buffer(processingBuffer);
+                uart_printf("[LTR] Monitor stopped\n");
+            }
+        }
+        if (lis_monitor_active) {
+            delay_cycles(monitor_rate * 32000); // 200ms
+
+            float x, y, z;
+            if (LIS3DH_ReadMg(&x, &y, &z)) {
+                uart_printf("[LIS] X: %8.2f  Y: %8.2f  Z: %8.2f mg\n", x, y, z);
+            } else {
+                uart_printf("[LIS] Read error\n");
+                lis_monitor_active = false;
+            }
+
+            if (data_received) {
+                lis_monitor_active = false;
+                get_UART_buffer(processingBuffer);
+                uart_printf("[LIS] Monitor stopped\n");
+            }
+        }
     }
 }
 
@@ -189,6 +234,12 @@ void UART_0_INST_IRQHandler(void)
             break;
     }
 }
+
+void MCU_UART_1_INST_IRQHandler(void)
+{
+    RAK3172_UART_Handler();
+}
+
 
 // void FLASH_CONTROL_INST_IRQHandler(void)
 // {
