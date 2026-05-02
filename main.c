@@ -52,6 +52,8 @@ int main(void)
     SPI_Controller_Init(&stm32Spi, SPI_1_INST,  DMA_CH0_CHAN_ID, DMA_CH1_CHAN_ID, gSPI_TxPacket, gSPI_RxPacket, SPI_PACKET_SIZE);
     SPI_Memory_Init(&framSpi, SPI_0_INST, DMA_CH2_CHAN_ID, DMA_CH3_CHAN_ID,DIGITAL_OUTPUT_PORTA_PORT,DIGITAL_OUTPUT_PORTA_CHIP_S_FRAM_PIN);
     char processingBuffer[MAX_INPUT_LEN];
+    DL_GPIO_setPins(DIGITAL_OUTPUT_PORTB_PORT, DIGITAL_OUTPUT_PORTB_GAUGE_EN_PIN);
+    RAK3172_Init();
     while (1) {
         if (data_received) {
             get_UART_buffer(processingBuffer);

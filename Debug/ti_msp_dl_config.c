@@ -370,7 +370,7 @@ static const DL_TimerA_ClockConfig gFLASH_CONTROLClockConfig = {
 
 static const DL_TimerA_PWMConfig gFLASH_CONTROLConfig = {
     .pwmMode = DL_TIMER_PWM_MODE_EDGE_ALIGN_UP,
-    .period = 10000,
+    .period = 25000,
     .isTimerWithFourCC = false,
     .startTimer = DL_TIMER_STOP,
 };
@@ -391,7 +391,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_FLASH_CONTROL_init(void) {
 		DL_TIMERA_CAPTURE_COMPARE_1_INDEX);
 
     DL_TimerA_setCaptCompUpdateMethod(FLASH_CONTROL_INST, DL_TIMER_CC_UPDATE_METHOD_IMMEDIATE, DL_TIMERA_CAPTURE_COMPARE_1_INDEX);
-    DL_TimerA_setCaptureCompareValue(FLASH_CONTROL_INST, 499, DL_TIMER_CC_1_INDEX);
+    DL_TimerA_setCaptureCompareValue(FLASH_CONTROL_INST, 5000, DL_TIMER_CC_1_INDEX);
 
     DL_TimerA_enableClock(FLASH_CONTROL_INST);
 
@@ -544,6 +544,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_MCU_UART_1_init(void)
     /* Configure Interrupts */
     DL_UART_Main_enableInterrupt(MCU_UART_1_INST,
                                  DL_UART_MAIN_INTERRUPT_RX |
+                                 DL_UART_MAIN_INTERRUPT_RX_TIMEOUT_ERROR |
                                  DL_UART_MAIN_INTERRUPT_TX);
 
 

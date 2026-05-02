@@ -808,7 +808,7 @@ void cmd_leds(char *args) {
                     "  led voltage <mV>      - set boost converter voltage (3490 - 11330 mV)\n"
                     "  led current <mA>      - set LED current (0 - 500 mA)\n"
                     "  led off               - safe shutdown, zeros current then voltage\n"
-                    "  led flash <ms>          - start flashing, on-time 1-10 ms\n"
+                    "  led flash <ms>          - start flashing, on-time 1-50 ms\n"
                     "  led flash stop          - stop flashing\n"
                     );
                     
@@ -868,7 +868,7 @@ void cmd_leds(char *args) {
     }
     else if (strcmp(sub, "flash") == 0) {
     if (tokenCount < 2) {
-        uart_printf("Usage: led flash <ms>   (1 - 10 ms)\n"
+        uart_printf("Usage: led flash <ms>   (1 - 50 ms)\n"
                     "       led flash stop\n");
         return;
     }

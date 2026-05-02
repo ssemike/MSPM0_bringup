@@ -215,7 +215,7 @@ void disable_led_boost(void){
 
 void LED_flash_start(uint16_t on_ms) {
     if (on_ms < 1)  on_ms = 1;
-    if (on_ms > 10) on_ms = 10;
+    if (on_ms > 50) on_ms = 50;
 
     uint16_t ticks = on_ms * 500;
     set_pwm_duty_cycle(&_pwm_outputs[2], ticks);
