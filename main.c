@@ -22,6 +22,8 @@ volatile bool lis_monitor_active   = false;
 volatile uint32_t monitor_rate = 2000; 
 volatile uint32_t hall_monitor_counter = 0;
 
+static void PIR_interrupt(bool enable);
+
 void setupCLI(void) {
     CLI_RegisterCommand("help", cmd_help, "Show available commands");
     CLI_RegisterCommand("pwr",  cmd_pwr,  "Control power rails: 3v8, lora, lte, wifi, stm");
@@ -181,12 +183,13 @@ int main(void)
                             gPIR.armed_cfg.threshold * 8,
                             motion ? "DETECTED" : "-");
             }
-            pir_monitor_active = false;
             if (data_received) {
                 pir_monitor_active = false;
                 get_UART_buffer(processingBuffer);
                 uart_printf("[PIR] Monitor stopped\n");
             }
+             pir_monitor_active = false;
+             PIR_interrupt(true);
         }
         if (ltr_monitor_active) {
             delay_cycles(monitor_rate * 32000); // 200ms
@@ -264,6 +267,8 @@ void GROUP1_IRQHandler(void) {
                     // 50µs pulse from ZDP323B detected
                     pir_monitor_active = true;
                     ZDP323B_MotionISR();
+                    PIR_interrupt(false);
+
                     break;
                 default:
                     break;
@@ -278,4 +283,16 @@ void GROUP1_IRQHandler(void) {
         default:
             break;
     }
+}
+static void PIR_interrupt(bool enable) {
+if(enable){
+        DL_GPIO_clearInterruptStatus(EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT,
+                                  EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN);
+    NVIC_ClearPendingIRQ(EXTERNAL_INTERRUPT_GPIOA_INT_IRQN);
+    NVIC_EnableIRQ(EXTERNAL_INTERRUPT_GPIOA_INT_IRQN);
+}else{
+    NVIC_ClearPendingIRQ(EXTERNAL_INTERRUPT_GPIOA_INT_IRQN);
+    NVIC_DisableIRQ(EXTERNAL_INTERRUPT_GPIOA_INT_IRQN);
+}
+
 }
