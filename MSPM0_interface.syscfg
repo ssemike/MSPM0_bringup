@@ -177,6 +177,7 @@ PWM1.peripheral.$assign                 = "TIMA0";
 PWM1.peripheral.ccp0Pin.$assign         = "PA21";
 PWM1.peripheral.ccp2Pin.$assign         = "PB17";
 PWM1.PWM_CHANNEL_2.$name                = "ti_driverlib_pwm_PWMTimerCC2";
+PWM1.PWM_CHANNEL_2.ccValue              = 99;
 PWM1.ccp2PinConfig.direction            = scripting.forceWrite("OUTPUT");
 PWM1.ccp2PinConfig.hideOutputInversion  = scripting.forceWrite(false);
 PWM1.ccp2PinConfig.onlyInternalResistor = scripting.forceWrite(false);

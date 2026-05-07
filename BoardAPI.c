@@ -153,7 +153,7 @@ void set_pwm_duty_cycle(const PWM_Config *pwm_channel, uint16_t duty_cycle) {
 
 void LED_set_voltage(uint16_t voltage) {
     const uint16_t LED_VMAX = 11540;
-    const uint16_t v_d = 92;
+    const uint16_t v_d = 90;
     
     uint16_t duty_cycle = (LED_VMAX - voltage) / v_d;
 

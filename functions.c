@@ -806,7 +806,7 @@ void cmd_leds(char *args) {
                     "  led on <1|0>       - Enables and disables boost\n"
                     "  led init              - initialise LED control, both outputs zeroed\n"
                     "  led voltage <mV>      - set boost converter voltage (3490 - 11330 mV)\n"
-                    "  led current <mA>      - set LED current (0 - 500 mA)\n"
+                    "  led current <mA>      - set LED current (0 -2000 mA)\n"
                     "  led off               - safe shutdown, zeros current then voltage\n"
                     "  led flash <ms>          - start flashing, on-time 1-50 ms\n"
                     "  led flash stop          - stop flashing\n"
@@ -851,7 +851,7 @@ void cmd_leds(char *args) {
     // Set LED output current
     else if (strcmp(sub, "current") == 0) {
         if (tokenCount < 2) {
-            uart_printf("Usage: led current <mA>  (valid range: 0 - 500)\n");
+            uart_printf("Usage: led current <mA>  (valid range: 0 - 2000)\n");
             return;
         }
         uint16_t current = (uint16_t)atoi(tokens[1]);
