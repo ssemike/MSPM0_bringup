@@ -208,13 +208,17 @@ extern "C" {
 
 /* Defines for PIR_TRIGGER: GPIOA.17 with pinCMx 39 on package pin 10 */
 #define EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT                              (GPIOA)
+// pins affected by this interrupt request:["PIR_TRIGGER"]
+#define EXTERNAL_INTERRUPT_GPIOA_INT_IRQN                       (GPIOA_INT_IRQn)
+#define EXTERNAL_INTERRUPT_GPIOA_INT_IIDX       (DL_INTERRUPT_GROUP1_IIDX_GPIOA)
+#define EXTERNAL_INTERRUPT_PIR_TRIGGER_IIDX                 (DL_GPIO_IIDX_DIO17)
 #define EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN                      (DL_GPIO_PIN_17)
 #define EXTERNAL_INTERRUPT_PIR_TRIGGER_IOMUX                     (IOMUX_PINCM39)
 /* Defines for CHARGER_INT: GPIOB.1 with pinCMx 13 on package pin 48 */
 #define EXTERNAL_INTERRUPT_CHARGER_INT_PORT                              (GPIOB)
 // pins affected by this interrupt request:["CHARGER_INT"]
-#define EXTERNAL_INTERRUPT_INT_IRQN                             (GPIOB_INT_IRQn)
-#define EXTERNAL_INTERRUPT_INT_IIDX             (DL_INTERRUPT_GROUP1_IIDX_GPIOB)
+#define EXTERNAL_INTERRUPT_GPIOB_INT_IRQN                       (GPIOB_INT_IRQn)
+#define EXTERNAL_INTERRUPT_GPIOB_INT_IIDX       (DL_INTERRUPT_GROUP1_IIDX_GPIOB)
 #define EXTERNAL_INTERRUPT_CHARGER_INT_IIDX                  (DL_GPIO_IIDX_DIO1)
 #define EXTERNAL_INTERRUPT_CHARGER_INT_PIN                       (DL_GPIO_PIN_1)
 #define EXTERNAL_INTERRUPT_CHARGER_INT_IOMUX                     (IOMUX_PINCM13)

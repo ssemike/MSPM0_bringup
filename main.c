@@ -7,10 +7,13 @@
 #include "ics/BQ27Z7/BQ27Z7_functions.h"
 #include "HAL/spi_master.h"
 #include "HAL/spi_mem.h"
+#include "ics/EXCELITAS/pyd1588.h"
 
 volatile bool bq_monitor_active    = false;
 volatile bool hall_monitor_active  = false;
 volatile bool gauge_monitor_active = false;
+volatile bool pir2_monitor_active  = false;
+volatile bool pir2_motion_detected = false;
 volatile uint32_t monitor_rate = 2000; 
 volatile uint32_t hall_monitor_counter = 0;
 
@@ -25,8 +28,7 @@ void setupCLI(void) {
     CLI_RegisterCommand("fram", cmd_fram, "MB85RS2MTA FRAM - type fram for help");
     CLI_RegisterCommand("pir",     cmd_pir_2,     "PIR monitor - type pir for full help");
 }
-
-
+int value =0;
 int main(void)
 {
     SYSCFG_DL_init(); 
@@ -38,7 +40,8 @@ int main(void)
     SPI_Controller_Init(&stm32Spi, SPI_1_INST,  DMA_CH0_CHAN_ID, DMA_CH1_CHAN_ID, gSPI_TxPacket, gSPI_RxPacket, SPI_PACKET_SIZE);
     SPI_Memory_Init(&framSpi, SPI_0_INST, DMA_CH2_CHAN_ID, DMA_CH3_CHAN_ID,DIGITAL_OUTPUT_PORTA_PORT,DIGITAL_OUTPUT_PORTA_CHIP_S_FRAM_PIN);
     char processingBuffer[MAX_INPUT_LEN];
-
+    DL_GPIO_setPins(DIGITAL_OUTPUT_PORTB_PORT, DIGITAL_OUTPUT_PORTB_GAUGE_EN_PIN);
+    // value=PIR_init();
     while (1) {
         if (data_received) {
             get_UART_buffer(processingBuffer);
@@ -147,6 +150,34 @@ int main(void)
                 uart_printf("Gauge monitor stopped\n");
             }
         }
+        if (pir2_monitor_active) {
+            if (pir2_motion_detected) {
+                // Temporarily disable interrupt to avoid nested triggers during bit-banging
+                NVIC_DisableIRQ(EXTERNAL_INTERRUPT_GPIOA_INT_IRQN);
+
+                uint32_t statcfg = 0;
+                bool out_of_range = false;
+                int adc_val = PIR_readData(&statcfg, &out_of_range);
+
+                uart_printf("[PYD2 Motion Event]\n");
+                uart_printf("%-12d 0x%08X %s\n", adc_val, statcfg & 0x1FFFFFF, out_of_range ? "OOR" : "OK");
+
+                // Clear any GPIO interrupt flag latched during bit-banging
+                DL_GPIO_clearInterruptStatus(EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT, EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN);
+                
+                pir2_motion_detected = false;
+                NVIC_EnableIRQ(EXTERNAL_INTERRUPT_GPIOA_INT_IRQN);
+            }
+
+            if (data_received) {
+                pir2_monitor_active = false;
+                get_UART_buffer(processingBuffer);
+                
+                NVIC_DisableIRQ(EXTERNAL_INTERRUPT_GPIOA_INT_IRQN);
+
+                uart_printf("[PYD2] Monitor stopped\n");
+            }
+        }
     }
 }
 
@@ -158,5 +189,16 @@ void UART_0_INST_IRQHandler(void)
             break;
         default:
             break;
+    }
+}
+
+void GROUP1_IRQHandler(void)
+{
+    // Check if the PIR trigger pin caused the interrupt on GPIOA
+    uint32_t gpioA_status = DL_GPIO_getEnabledInterruptStatus(EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT, EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN);
+    
+    if (gpioA_status & EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN) {
+        pir2_motion_detected = true;
+        DL_GPIO_clearInterruptStatus(EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT, EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN);
     }
 }

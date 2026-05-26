@@ -790,14 +790,14 @@ typedef struct {
 } PYD_State_t;
 
 static PYD_State_t gPYD2 = {0};
-static bool pir2_monitor_active = false;
+extern volatile bool pir2_monitor_active;
 
 static void pir2_print_help(void) {
     uart_printf("PYD1588 Usage:\n");
     uart_printf("  pir init\n");
-    uart_printf("  pir conf <threshold> <blind> <pulses> <window>\n");
+    uart_printf("  pir conf <threshold> <hpf> <pulses> <window>\n");
     uart_printf("     threshold : 0-255\n");
-    uart_printf("     blind     : 0-15 (0.5s to 8s)\n");
+    uart_printf("     hpf       : 0-1 (0=0.4Hz, 1=0.2Hz)\n");
     uart_printf("     pulses    : 1-4\n");
     uart_printf("     window    : 0-3 (2s, 4s, 6s, 8s)\n");
     uart_printf("  pir status\n");
@@ -833,34 +833,40 @@ void cmd_pir_2(char *args) {
         }
     }
 
-    // ── pir2 init <threshold> <blind> <pulses> <window> ──
+    // ── pir2 conf <threshold> <hpf> <pulses> <window> ──
     else if (strcmp(sub, "conf") == 0) {
         if (tokenCount < 5) {
-            uart_printf("[PYD2] init requires: threshold blind pulses window\n");
+            uart_printf("[PYD2] conf requires: threshold hpf pulses window\n");
             return;
         }
 
         uint32_t threshold = (uint32_t)atoi(tokens[1]) & 0xFF;
-        uint32_t blind     = (uint32_t)atoi(tokens[2]) & 0x0F;
+        uint32_t hpf       = (uint32_t)atoi(tokens[2]) & 0x01;
         uint32_t pulses    = (uint32_t)(atoi(tokens[3]) - 1) & 0x03; // 1-4 -> 0-3
         uint32_t window    = (uint32_t)atoi(tokens[4]) & 0x03;
 
         // Pack bits per PYD1588 datasheet:
-        // [24:17] Threshold | [16:13] Blind | [12:11] Pulse | [10:9] Window | [8:0] Defaults
         uint32_t config = (threshold << 17) | 
-                          (blind     << 13) | 
+                          PIR_BLIND_TIME | 
                           (pulses    << 11) | 
                           (window    << 9)  | 
-                          0x00; // Filter Source (0), Mode (00), Reserved (00000)
+                          PIR_OPERATION_MODE |
+                          PIR_SOURCE |
+                          (hpf       << 2)  |
+                          PIR_RESERVED |         // Mandatory reserved bits (dec 2 at bits 4:3)
+                          PIR_PULSE_DETECTION_MODE; // Count mode / pulse detection mode (bit 0 = 1)
 
         uart_printf("[PYD2] Config Word: 0x%08X\n", config);
         
-        PIR_writeConfig(config);
-        gPYD2.last_config = config;
-        gPYD2.initialized = true;
-        
-        uart_printf("[PYD2] Initialized. Thresh: %d, Blind: %d, Pulses: %d, Window: %d\n", 
-                    threshold, blind, pulses + 1, window);
+        if (PIR_configureAndVerify(config) == -1) {
+            uart_printf("[PYD2] Custom config failed - Check wiring or power\n");
+            gPYD2.initialized = false;
+        } else {
+            gPYD2.last_config = config;
+            gPYD2.initialized = true;
+            uart_printf("[PYD2] Configured and Verified. Thresh: %d, HPF: %d, Pulses: %d, Window: %d\n", 
+                        threshold, hpf, pulses + 1, window);
+        }
     }
 
     // ── pir2 status ────────────────────────────────
@@ -871,13 +877,15 @@ void cmd_pir_2(char *args) {
         }
 
         uint32_t statcfg = 0;
-        int adc_val = PIR_readData(&statcfg);
+        bool out_of_range = false;
+        int adc_val = PIR_readData(&statcfg, &out_of_range);
 
         uart_printf("[PYD2] Status:\n");
         uart_printf("  ADC Value    : %d\n", adc_val);
         uart_printf("  Config Read  : 0x%08X\n", statcfg & 0x1FFFFFF);
         uart_printf("  Config Match : %s\n", 
                     ((statcfg & 0x1FFFFFF) == (gPYD2.last_config & 0x1FFFFFF)) ? "OK" : "MISMATCH");
+        uart_printf("  Sensor Status: %s\n", out_of_range ? "Out of Range / Resetting" : "Normal Operation");
     }
 
     // ── pir2 monitor ───────────────────────────────
@@ -886,8 +894,16 @@ void cmd_pir_2(char *args) {
             uart_printf("[PYD2] Run 'pir2 init' first.\n");
             return;
         }
+        // Clear any old flags
+        extern volatile bool pir2_motion_detected;
+        pir2_motion_detected = false;
+        
+        // Clear pending interrupts on GPIO and enable NVIC IRQ
+        DL_GPIO_clearInterruptStatus(EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT, EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN);
+        NVIC_EnableIRQ(EXTERNAL_INTERRUPT_GPIOA_INT_IRQN);
+        
         pir2_monitor_active = true;
-        uart_printf("[PYD2] Monitor active. Send any key to stop.\n");
+        uart_printf("[PYD2] Interrupt monitor active (Wake Up Mode). Send any key to stop.\n");
         uart_printf("%-12s %-12s\n", "ADC Result", "Config Bits");
         uart_printf("%-12s %-12s\n", "----------", "-----------");
     }
