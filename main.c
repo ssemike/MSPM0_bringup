@@ -22,8 +22,12 @@ volatile bool lis_monitor_active   = false;
 volatile uint32_t monitor_rate = 2000; 
 volatile uint32_t hall_monitor_counter = 0;
 
-static void PIR_interrupt(bool enable);
+volatile bool g_pir_interrupt_enabled = true;
+static bool s_pir_was_enabled_before_i2c = false;
 
+void PIR_interrupt(bool enable);
+void PIR_Interrupt_PauseForI2C(void);
+void PIR_Interrupt_ResumeAfterI2C(void);
 void setupCLI(void) {
     CLI_RegisterCommand("help", cmd_help, "Show available commands");
     CLI_RegisterCommand("pwr",  cmd_pwr,  "Control power rails: 3v8, lora, lte, wifi, stm");
@@ -284,15 +288,31 @@ void GROUP1_IRQHandler(void) {
             break;
     }
 }
-static void PIR_interrupt(bool enable) {
-if(enable){
-        DL_GPIO_clearInterruptStatus(EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT,
-                                  EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN);
-    NVIC_ClearPendingIRQ(EXTERNAL_INTERRUPT_GPIOA_INT_IRQN);
-    NVIC_EnableIRQ(EXTERNAL_INTERRUPT_GPIOA_INT_IRQN);
-}else{
-    NVIC_ClearPendingIRQ(EXTERNAL_INTERRUPT_GPIOA_INT_IRQN);
-    NVIC_DisableIRQ(EXTERNAL_INTERRUPT_GPIOA_INT_IRQN);
+void PIR_interrupt(bool enable) {
+    if(enable){
+        DL_GPIO_clearInterruptStatus(EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT, EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN);
+        NVIC_ClearPendingIRQ(EXTERNAL_INTERRUPT_GPIOA_INT_IRQN);
+        DL_GPIO_enableInterrupt(EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT, EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN);
+        g_pir_interrupt_enabled = true;
+    }else{
+        DL_GPIO_clearInterruptStatus(EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT, EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN);
+        DL_GPIO_disableInterrupt(EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT, EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN);
+        g_pir_interrupt_enabled = false;
+    }
 }
 
+void PIR_Interrupt_PauseForI2C(void) {
+    s_pir_was_enabled_before_i2c = g_pir_interrupt_enabled;
+    if (s_pir_was_enabled_before_i2c) {
+        DL_GPIO_disableInterrupt(EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT, EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN);
+    }
+}
+
+void PIR_Interrupt_ResumeAfterI2C(void) {
+    if (s_pir_was_enabled_before_i2c) {
+        delay_cycles(200); // Small settle delay
+        DL_GPIO_clearInterruptStatus(EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT, EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN);
+        NVIC_ClearPendingIRQ(EXTERNAL_INTERRUPT_GPIOA_INT_IRQN);
+        DL_GPIO_enableInterrupt(EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT, EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN);
+    }
 }

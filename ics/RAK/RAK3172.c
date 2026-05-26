@@ -21,6 +21,9 @@ void RAK3172_Init(void) {
     rak_response_ready = false;
     memset(rak_rx_buffer, 0, RAK_RX_BUFFER_SIZE);
 
+    // Turn on power to the LoRa module
+    RAK3172_SetPower(true);
+
     // SysConfig enabled both RX and TX — disable TX, we don't use it
     DL_UART_Main_disableInterrupt(MCU_UART_1_INST, DL_UART_MAIN_INTERRUPT_TX);
     DL_UART_Main_enableInterrupt(MCU_UART_1_INST, DL_UART_MAIN_INTERRUPT_RX | DL_UART_MAIN_INTERRUPT_RX_TIMEOUT_ERROR);
@@ -70,7 +73,14 @@ bool RAK3172_WaitForResponse(const char *expected, uint32_t timeout_ms) {
             if (strstr(rak_rx_buffer, expected) != NULL) {
                 return true;
             }
-            rak_response_ready = false; // Reset if not what we wanted
+            if (strstr(rak_rx_buffer, "ERROR") != NULL) {
+                return false;
+            }
+            // Echo intermediate non-empty payload lines so they are not silently lost
+            if (rak_rx_buffer[0] != '\0') {
+                uart_printf("%s", rak_rx_buffer);
+            }
+            rak_response_ready = false; // Reset for next line
             rak_rx_index = 0;
             memset(rak_rx_buffer, 0, RAK_RX_BUFFER_SIZE);
         }
@@ -203,7 +213,7 @@ void cmd_rak(char *args) {
                 uart_printf("Timeout or No Response. Buffer: %s (idx: %d)\n", RAK3172_GetLastResponse(), rak_rx_index);
             }
         }
-        else if (strcmp(tokens[0], "cmd") == 0 && tokenCount >= 2) {
+        else {
             uart_printf("Sending: %s\n", tokens[1]);
             RAK3172_SendCommand(tokens[1]);
 
