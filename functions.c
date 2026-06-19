@@ -894,12 +894,18 @@ void cmd_pir_2(char *args) {
             uart_printf("[PYD2] Run 'pir2 init' first.\n");
             return;
         }
-        // Clear any old flags
+
+        // The sensor's DIRECT LINK pin might be stuck HIGH if motion was detected
+        // before we started monitoring. If it's stuck HIGH, we will never see a new
+        // rising edge. So we must explicitly pull it LOW to reset the sensor's MDU.
+        PIR_clearInterrupt();
+
+        // Clear any old software flags and latched GPIO interrupts
         extern volatile bool pir2_motion_detected;
         pir2_motion_detected = false;
-        
-        // Clear pending interrupts on GPIO and enable NVIC IRQ
         DL_GPIO_clearInterruptStatus(EXTERNAL_INTERRUPT_PIR_TRIGGER_PORT, EXTERNAL_INTERRUPT_PIR_TRIGGER_PIN);
+        
+        // Enable NVIC IRQ
         NVIC_EnableIRQ(EXTERNAL_INTERRUPT_GPIOA_INT_IRQN);
         
         pir2_monitor_active = true;
