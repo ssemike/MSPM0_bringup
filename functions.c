@@ -13,6 +13,11 @@
 #include "ics/ZILOG/ZDP323B.h"
 #include "ics/LTR329/LTR329.h"
 #include "ics/LIS3DH/LIS3DH.h"
+#include "HAL/SX126x_MSPM0.h"
+#include "ics/IMX335/IMX335.h"
+#include "ics/SX126X/sx126x-board.h"
+#include "ics/SX126X/radio.h"
+
 
 
 extern volatile bool gauge_monitor_active;
@@ -1245,3 +1250,175 @@ void cmd_lis(char *args) {
         uart_printf("Unknown lis sub-command\n");
     }
 }
+
+void cmd_lora(char *args) {
+    char *tokens[3];
+    int tokenCount = CLI_Tokenize(args, tokens, 3);
+
+    if (tokenCount < 1) {
+        uart_printf("Usage: lora <init|read|write|test>\n");
+        return;
+    }
+
+    char *sub = tokens[0];
+
+    if (strcmp(sub, "init") == 0) {
+        // Make sure LoRa power domain is ON (LORA_PON is PB12)
+        DL_GPIO_setPins(DIGITAL_OUTPUT_PORTB_PORT, DIGITAL_OUTPUT_PORTB_LORA_PON_PIN);
+        SX126xIoInit();
+        SX126xReset();
+        SX126xWaitOnBusy();
+        uart_printf("RA-01SH-P LoRa IO initialized and Reset cycle completed.\n");
+    }
+    else if (strcmp(sub, "read") == 0) {
+        if (tokenCount < 2) {
+            uart_printf("Usage: lora read <reg_addr_hex> (e.g. lora read 08E7)\n");
+            return;
+        }
+        uint16_t addr = (uint16_t)strtol(tokens[1], NULL, 16);
+        uint8_t val = SX126xReadRegister(addr);
+        uart_printf("LoRa Reg [0x%04X] = 0x%02X\n", addr, val);
+    }
+    else if (strcmp(sub, "write") == 0) {
+        if (tokenCount < 3) {
+            uart_printf("Usage: lora write <reg_addr_hex> <val_hex> (e.g. lora write 08E7 18)\n");
+            return;
+        }
+        uint16_t addr = (uint16_t)strtol(tokens[1], NULL, 16);
+        uint8_t val = (uint8_t)strtol(tokens[2], NULL, 16);
+        SX126xWriteRegister(addr, val);
+        uart_printf("LoRa Reg [0x%04X] written with 0x%02X\n", addr, val);
+    }
+    else if (strcmp(sub, "test") == 0) {
+        // Read OCP register (default: 0x18 or similar depending on mode)
+        uint8_t ocp = SX126xReadRegister(0x08E7);
+        uart_printf("OCP Register (0x08E7) Read Value: 0x%02X\n", ocp);
+        if (ocp != 0x00 && ocp != 0xFF) {
+            uart_printf("LoRa SPI Test: SUCCESS\n");
+        } else {
+            uart_printf("LoRa SPI Test: FAILED (Check connection or power)\n");
+        }
+    }
+    else {
+        uart_printf("Unknown lora sub-command\n");
+    }
+}
+
+void cmd_imx(char *args) {
+    char *tokens[3];
+    int tokenCount = CLI_Tokenize(args, tokens, 3);
+
+    if (tokenCount < 1) {
+        uart_printf("IMX335 Camera Control CLI:\n"
+                    "  imx scan             - Scan I2C1 for the camera\n"
+                    "  imx init             - Initialize the camera and start streaming\n"
+                    "  imx id               - Read camera sensor ID\n"
+                    "  imx read <reg_hex>   - Read a 16-bit register (hex address)\n"
+                    "  imx write <reg_hex> <val_hex> - Write a value to a 16-bit register\n"
+                    "  imx gain <mdB>       - Set gain in mdB (0 to 72000, e.g. 20000 for 20dB)\n"
+                    "  imx exposure <us>    - Set exposure in microseconds (0 to 33266)\n"
+                    "  imx tpg <mode>       - Set test pattern (-1:off, 10:H-bars, 11:V-bars)\n");
+        return;
+    }
+
+    char *sub = tokens[0];
+
+    if (strcmp(sub, "scan") == 0) {
+        uart_printf("Scanning for IMX335 on I2C1...\n");
+        if (IMX335_Scan()) {
+            uart_printf("IMX335 camera found at 0x%02X\n", gIMX335.dev_addr);
+        } else {
+            uart_printf("IMX335 camera not found (checked 0x1A and 0x36)\n");
+        }
+    }
+    else if (strcmp(sub, "init") == 0) {
+        uart_printf("Initializing IMX335 on I2C1...\n");
+        if (IMX335_Scan() == false) {
+            uart_printf("ERROR: Camera not detected on I2C1\n");
+            return;
+        }
+        if (IMX335_Init(I2C_1_INST)) {
+            uart_printf("IMX335 initialized successfully. Streaming started.\n");
+        } else {
+            uart_printf("ERROR: IMX335 initialization failed\n");
+        }
+    }
+    else if (strcmp(sub, "id") == 0) {
+        uint32_t id = 0;
+        if (IMX335_ReadID(&id)) {
+            uart_printf("IMX335 Sensor ID: 0x%02X (Expected: 0x%02X)\n", id, IMX335_CHIP_ID);
+        } else {
+            uart_printf("ERROR: Failed to read Sensor ID\n");
+        }
+    }
+    else if (strcmp(sub, "read") == 0) {
+        if (tokenCount < 2) {
+            uart_printf("Usage: imx read <reg_hex>\n");
+            return;
+        }
+        uint16_t reg = (uint16_t)strtol(tokens[1], NULL, 16);
+        uint8_t val = 0;
+        if (IMX335_ReadReg(reg, &val)) {
+            uart_printf("Reg [0x%04X] = 0x%02X\n", reg, val);
+        } else {
+            uart_printf("ERROR: Failed to read register 0x%04X\n", reg);
+        }
+    }
+    else if (strcmp(sub, "write") == 0) {
+        if (tokenCount < 3) {
+            uart_printf("Usage: imx write <reg_hex> <val_hex>\n");
+            return;
+        }
+        uint16_t reg = (uint16_t)strtol(tokens[1], NULL, 16);
+        uint8_t val = (uint8_t)strtol(tokens[2], NULL, 16);
+        if (IMX335_WriteReg(reg, val)) {
+            uart_printf("Reg [0x%04X] written with 0x%02X\n", reg, val);
+        } else {
+            uart_printf("ERROR: Failed to write register 0x%04X\n", reg);
+        }
+    }
+    else if (strcmp(sub, "gain") == 0) {
+        if (tokenCount < 2) {
+            uart_printf("Usage: imx gain <mdB>\n");
+            return;
+        }
+        uint32_t gain = (uint32_t)atoi(tokens[1]);
+        if (IMX335_SetGain(gain)) {
+            uart_printf("IMX335 gain set to %u mdB\n", gain);
+        } else {
+            uart_printf("ERROR: Failed to set gain to %u mdB\n", gain);
+        }
+    }
+    else if (strcmp(sub, "exposure") == 0) {
+        if (tokenCount < 2) {
+            uart_printf("Usage: imx exposure <us>\n");
+            return;
+        }
+        uint32_t exp = (uint32_t)atoi(tokens[1]);
+        if (IMX335_SetExposure(exp)) {
+            uart_printf("IMX335 exposure set to %u us\n", exp);
+        } else {
+            uart_printf("ERROR: Failed to set exposure to %u us\n", exp);
+        }
+    }
+    else if (strcmp(sub, "tpg") == 0) {
+        if (tokenCount < 2) {
+            uart_printf("Usage: imx tpg <mode>\n");
+            return;
+        }
+        int32_t mode = (int32_t)atoi(tokens[1]);
+        if (IMX335_SetTestPattern(mode)) {
+            if (mode >= 0) {
+                uart_printf("IMX335 Test Pattern Generator enabled (mode %d)\n", mode);
+            } else {
+                uart_printf("IMX335 Test Pattern Generator disabled\n");
+            }
+        } else {
+            uart_printf("ERROR: Failed to configure Test Pattern Generator\n");
+        }
+    }
+    else {
+        uart_printf("Unknown imx sub-command. Type 'imx' for help.\n");
+    }
+}
+

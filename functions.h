@@ -38,4 +38,6 @@ void cmd_ltr(char *args);
 void cmd_lis(char *args);
 
 void cmd_i2cscan10(char *args);
+void cmd_lora(char *args);
+void cmd_imx(char *args);
 #endif /* FUNCTIONS_H_ */

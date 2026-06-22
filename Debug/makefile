@@ -15,6 +15,7 @@ ORDERED_OBJS += \
 "./startup_mspm0g350x_ticlang.o" \
 "./functions.o" \
 "./main.o" \
+"./HAL/SX126x_MSPM0.o" \
 "./HAL/i2c.o" \
 "./HAL/spi_master.o" \
 "./HAL/spi_mem.o" \
@@ -22,10 +23,13 @@ ORDERED_OBJS += \
 "./ics/BQ25628/BQ25628_functions.o" \
 "./ics/BQ27Z7/BQ27Z7_functions.o" \
 "./ics/BQ27Z7/gauge.o" \
+"./ics/IMX335/IMX335.o" \
 "./ics/LIS3DH/LIS3DH.o" \
 "./ics/LTR329/LTR329.o" \
 "./ics/MB85RS/mb85rs.o" \
 "./ics/RAK/RAK3172.o" \
+"./ics/SX126X/radio.o" \
+"./ics/SX126X/sx126x.o" \
 "./ics/ZILOG/ZDP323B.o" \
 $(GEN_CMDS__FLAG) \
 -Wl,-ldevice.cmd.genlibs \
@@ -42,19 +46,23 @@ RMDIR := RMDIR /S/Q
 -include HAL/subdir_vars.mk
 -include ics/BQ25628/subdir_vars.mk
 -include ics/BQ27Z7/subdir_vars.mk
+-include ics/IMX335/subdir_vars.mk
 -include ics/LIS3DH/subdir_vars.mk
 -include ics/LTR329/subdir_vars.mk
 -include ics/MB85RS/subdir_vars.mk
 -include ics/RAK/subdir_vars.mk
+-include ics/SX126X/subdir_vars.mk
 -include ics/ZILOG/subdir_vars.mk
 -include subdir_rules.mk
 -include HAL/subdir_rules.mk
 -include ics/BQ25628/subdir_rules.mk
 -include ics/BQ27Z7/subdir_rules.mk
+-include ics/IMX335/subdir_rules.mk
 -include ics/LIS3DH/subdir_rules.mk
 -include ics/LTR329/subdir_rules.mk
 -include ics/MB85RS/subdir_rules.mk
 -include ics/RAK/subdir_rules.mk
+-include ics/SX126X/subdir_rules.mk
 -include ics/ZILOG/subdir_rules.mk
 -include objects.mk
 
@@ -166,8 +174,8 @@ HW_SW_interface_CCS.out: $(OBJS) $(GEN_CMDS)
 # Other Targets
 clean:
 	-$(RM) $(GEN_MISC_FILES__QUOTED)$(GEN_FILES__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "BoardAPI.o" "ti_msp_dl_config.o" "startup_mspm0g350x_ticlang.o" "functions.o" "main.o" "HAL\i2c.o" "HAL\spi_master.o" "HAL\spi_mem.o" "HAL\uart.o" "ics\BQ25628\BQ25628_functions.o" "ics\BQ27Z7\BQ27Z7_functions.o" "ics\BQ27Z7\gauge.o" "ics\LIS3DH\LIS3DH.o" "ics\LTR329\LTR329.o" "ics\MB85RS\mb85rs.o" "ics\RAK\RAK3172.o" "ics\ZILOG\ZDP323B.o" 
-	-$(RM) "BoardAPI.d" "ti_msp_dl_config.d" "startup_mspm0g350x_ticlang.d" "functions.d" "main.d" "HAL\i2c.d" "HAL\spi_master.d" "HAL\spi_mem.d" "HAL\uart.d" "ics\BQ25628\BQ25628_functions.d" "ics\BQ27Z7\BQ27Z7_functions.d" "ics\BQ27Z7\gauge.d" "ics\LIS3DH\LIS3DH.d" "ics\LTR329\LTR329.d" "ics\MB85RS\mb85rs.d" "ics\RAK\RAK3172.d" "ics\ZILOG\ZDP323B.d" 
+	-$(RM) "BoardAPI.o" "ti_msp_dl_config.o" "startup_mspm0g350x_ticlang.o" "functions.o" "main.o" "HAL\SX126x_MSPM0.o" "HAL\i2c.o" "HAL\spi_master.o" "HAL\spi_mem.o" "HAL\uart.o" "ics\BQ25628\BQ25628_functions.o" "ics\BQ27Z7\BQ27Z7_functions.o" "ics\BQ27Z7\gauge.o" "ics\IMX335\IMX335.o" "ics\LIS3DH\LIS3DH.o" "ics\LTR329\LTR329.o" "ics\MB85RS\mb85rs.o" "ics\RAK\RAK3172.o" "ics\SX126X\radio.o" "ics\SX126X\sx126x.o" "ics\ZILOG\ZDP323B.o" 
+	-$(RM) "BoardAPI.d" "ti_msp_dl_config.d" "startup_mspm0g350x_ticlang.d" "functions.d" "main.d" "HAL\SX126x_MSPM0.d" "HAL\i2c.d" "HAL\spi_master.d" "HAL\spi_mem.d" "HAL\uart.d" "ics\BQ25628\BQ25628_functions.d" "ics\BQ27Z7\BQ27Z7_functions.d" "ics\BQ27Z7\gauge.d" "ics\IMX335\IMX335.d" "ics\LIS3DH\LIS3DH.d" "ics\LTR329\LTR329.d" "ics\MB85RS\mb85rs.d" "ics\RAK\RAK3172.d" "ics\SX126X\radio.d" "ics\SX126X\sx126x.d" "ics\ZILOG\ZDP323B.d" 
 	-@echo ' '
 
 .PHONY: all clean dependents

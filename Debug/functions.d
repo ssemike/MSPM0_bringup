@@ -89,7 +89,10 @@ functions.o: ../functions.c \
  C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/i2c.h \
  ../ics/BQ27Z7/gauge.h ../HAL/spi_mem.h ../ics/MB85RS/mb85rs.h \
  C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/spi_mem.h ../BoardAPI.h \
- ../ics/ZILOG/ZDP323B.h ../ics/LTR329/LTR329.h ../ics/LIS3DH/LIS3DH.h
+ ../ics/ZILOG/ZDP323B.h ../ics/LTR329/LTR329.h ../ics/LIS3DH/LIS3DH.h \
+ ../HAL/SX126x_MSPM0.h ../ics/IMX335/IMX335.h \
+ ../ics/SX126X/sx126x-board.h ../ics/SX126X/sx126x.h \
+ ../ics/SX126X/radio.h
 ti_msp_dl_config.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/msp.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/DeviceFamily.h:
@@ -187,3 +190,8 @@ C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/spi_mem.h:
 ../ics/ZILOG/ZDP323B.h:
 ../ics/LTR329/LTR329.h:
 ../ics/LIS3DH/LIS3DH.h:
+../HAL/SX126x_MSPM0.h:
+../ics/IMX335/IMX335.h:
+../ics/SX126X/sx126x-board.h:
+../ics/SX126X/sx126x.h:
+../ics/SX126X/radio.h:

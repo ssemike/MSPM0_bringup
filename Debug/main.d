@@ -89,7 +89,7 @@ main.o: ../main.c \
  C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/i2c.h \
  ../ics/BQ27Z7/gauge.h ../HAL/spi_master.h ../HAL/spi_mem.h \
  ../ics/ZILOG/ZDP323B.h ../ics/LTR329/LTR329.h ../ics/LIS3DH/LIS3DH.h \
- ../ics/RAK/RAK3172.h
+ ../ics/RAK/RAK3172.h ../ics/IMX335/IMX335.h
 ti_msp_dl_config.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/msp.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/DeviceFamily.h:
@@ -186,3 +186,4 @@ C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/i2c.h:
 ../ics/LTR329/LTR329.h:
 ../ics/LIS3DH/LIS3DH.h:
 ../ics/RAK/RAK3172.h:
+../ics/IMX335/IMX335.h:

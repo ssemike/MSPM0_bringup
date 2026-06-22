@@ -11,6 +11,7 @@
 #include "ics/LTR329/LTR329.h"
 #include "ics/LIS3DH/LIS3DH.h"
 #include "ics/RAK/RAK3172.h"
+#include "ics/IMX335/IMX335.h"
 
 
 volatile bool bq_monitor_active    = false;
@@ -43,6 +44,8 @@ void setupCLI(void) {
     CLI_RegisterCommand("ltr",     cmd_ltr,     "LTR-329 ALS sensor - type ltr for help");
     CLI_RegisterCommand("lis",     cmd_lis,     "LIS3DH accelerometer - type lis for help");
     CLI_RegisterCommand("rak",     cmd_rak,     "RAK3172 LoRaWAN module CLI");
+    CLI_RegisterCommand("lora",    cmd_lora,    "Test RA-01SH-P (SX126x) LoRa - type lora for help");
+    CLI_RegisterCommand("imx",     cmd_imx,     "IMX335 camera control - type imx for help");
 }
 
 
