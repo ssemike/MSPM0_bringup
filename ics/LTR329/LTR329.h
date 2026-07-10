@@ -72,4 +72,9 @@ bool LTR329_ReadData(uint16_t *ch0, uint16_t *ch1);
 bool LTR329_GetStatus(uint8_t *status);
 float LTR329_CalculateLux(uint16_t ch0, uint16_t ch1);
 
+/* Prediction Model Functions */
+double score_exposure_sep(double *input);
+double score_gain_sep(double *input);
+void LTR329_PrintPredictedExposureGain(float lux);
+
 #endif /* LTR329_H */

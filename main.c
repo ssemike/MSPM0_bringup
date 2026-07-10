@@ -19,6 +19,7 @@ volatile bool hall_monitor_active  = false;
 volatile bool gauge_monitor_active = false;
 volatile bool pir_monitor_active   = false;
 volatile bool ltr_monitor_active   = false;
+volatile bool ltr_model_monitor_active = false;
 volatile bool lis_monitor_active   = false;
 volatile uint32_t monitor_rate = 2000; 
 volatile uint32_t hall_monitor_counter = 0;
@@ -214,6 +215,24 @@ int main(void)
                 ltr_monitor_active = false;
                 get_UART_buffer(processingBuffer);
                 uart_printf("[LTR] Monitor stopped\n");
+            }
+        }
+        if (ltr_model_monitor_active) {
+            delay_cycles(500 * 32000); // 500ms delay
+
+            uint16_t ch0, ch1;
+            if (LTR329_ReadData(&ch0, &ch1)) {
+                float lux = LTR329_CalculateLux(ch0, ch1);
+                LTR329_PrintPredictedExposureGain(lux);
+            } else {
+                uart_printf("[LTR] Read error\n");
+                ltr_model_monitor_active = false;
+            }
+
+            if (data_received) {
+                ltr_model_monitor_active = false;
+                get_UART_buffer(processingBuffer);
+                uart_printf("[LTR] Model monitor stopped\n");
             }
         }
         if (lis_monitor_active) {

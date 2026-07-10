@@ -280,6 +280,12 @@ bool IMX335_Init(I2C_Regs *i2c) {
         return false;
     }
 
+    // Verify Sensor ID
+    uint32_t id = 0;
+    if (!IMX335_ReadID(&id) || id != IMX335_CHIP_ID) {
+        return false;
+    }
+
     // Write base resolution table
     if (!IMX335_WriteTable(res_2592_1944_regs, sizeof(res_2592_1944_regs)/sizeof(struct regval))) {
         return false;
@@ -289,14 +295,6 @@ bool IMX335_Init(I2C_Regs *i2c) {
     if (!IMX335_WriteTable(mode_2l_10b_regs, sizeof(mode_2l_10b_regs)/sizeof(struct regval))) {
         return false;
     }
-
-    // Start Streaming
-    uint8_t stream_mode = IMX335_MODE_STREAMING;
-    if (I2C_WriteDevice16(i2c, gIMX335.dev_addr, IMX335_REG_MODE_SELECT, &stream_mode, 1) != I2C_SUCCESS) {
-        return false;
-    }
-
-    delay_cycles(20 * 32000); // 20ms settle delay
 
     gIMX335.initialized = true;
     return true;
@@ -401,4 +399,20 @@ bool IMX335_Scan(void) {
         return true;
     }
     return false;
+}
+
+bool IMX335_Start(void) {
+    if (!gIMX335.initialized) return false;
+    uint8_t stream_mode = IMX335_MODE_STREAMING;
+    if (I2C_WriteDevice16(gIMX335.i2c, gIMX335.dev_addr, IMX335_REG_MODE_SELECT, &stream_mode, 1) != I2C_SUCCESS) {
+        return false;
+    }
+    delay_cycles(20 * 32000); // 20ms settle delay
+    return true;
+}
+
+bool IMX335_Stop(void) {
+    if (!gIMX335.initialized) return false;
+    uint8_t standby_mode = IMX335_MODE_STANDBY;
+    return (I2C_WriteDevice16(gIMX335.i2c, gIMX335.dev_addr, IMX335_REG_MODE_SELECT, &standby_mode, 1) == I2C_SUCCESS);
 }

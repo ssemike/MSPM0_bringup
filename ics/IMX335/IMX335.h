@@ -26,7 +26,7 @@
 /* Operational Modes */
 #define IMX335_MODE_STREAMING     0x00
 #define IMX335_MODE_STANDBY       0x01
-#define IMX335_CHIP_ID            0x33
+#define IMX335_CHIP_ID            0x00
 
 /* Constants */
 #define IMX335_SHUTTER_MIN        9
@@ -62,5 +62,7 @@ bool IMX335_SetGain(uint32_t gain_mdB);
 bool IMX335_SetExposure(uint32_t exposure_us);
 bool IMX335_SetTestPattern(int32_t mode);
 bool IMX335_Scan(void);
+bool IMX335_Start(void);
+bool IMX335_Stop(void);
 
 #endif /* IMX335_H */

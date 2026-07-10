@@ -1,5 +1,6 @@
 #include "LTR329.h"
 #include <math.h>
+#include "HAL/uart.h"
 
 LTR329_Handle gLTR329 = {0};
 
@@ -145,4 +146,14 @@ float LTR329_CalculateLux(uint16_t ch0, uint16_t ch1) {
     lux = lux / gain_factor / int_factor;
 
     return lux;
+}
+
+void LTR329_PrintPredictedExposureGain(float lux) {
+    double input[1];
+    input[0] = log1p((double)lux);
+    
+    double exp_pred = score_exposure_sep(input);
+    double gain_pred = score_gain_sep(input);
+    
+    uart_printf("%ld, %ld, %ld\r\n", (int32_t)exp_pred, (int32_t)gain_pred, (int32_t)lux);
 }

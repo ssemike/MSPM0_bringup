@@ -14,6 +14,7 @@
 "./ics/IMX335/IMX335.o"
 "./ics/LIS3DH/LIS3DH.o"
 "./ics/LTR329/LTR329.o"
+"./ics/LTR329/als_model_separate.o"
 "./ics/MB85RS/mb85rs.o"
 "./ics/RAK/RAK3172.o"
 "./ics/SX126X/radio.o"

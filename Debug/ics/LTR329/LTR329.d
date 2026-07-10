@@ -84,7 +84,8 @@ ics/LTR329/LTR329.o: ../ics/LTR329/LTR329.c ../ics/LTR329/LTR329.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_vref.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_wwdt.h \
  C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_interrupt.h \
- C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_systick.h
+ C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_systick.h \
+ C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/uart.h
 ../ics/LTR329/LTR329.h:
 C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/i2c.h:
 ti_msp_dl_config.h:
@@ -170,3 +171,4 @@ C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_vref.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/dl_wwdt.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_interrupt.h:
 C:/ti/mspm0_sdk_2_09_00_01/source/ti/driverlib/m0p/dl_systick.h:
+C:/Users/Admin/Desktop/HW_SW_interface_CCS/HAL/uart.h:

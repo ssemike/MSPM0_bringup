@@ -64,6 +64,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_init(void)
     SYSCFG_DL_SPI_0_init();
     SYSCFG_DL_SPI_1_init();
     SYSCFG_DL_DMA_init();
+    SYSCFG_DL_SYSTICK_init();
     /* Ensure backup structures have no valid state */
 	gBOOST_CONTROLBackup.backupRdy 	= false;
 	gFLASH_CONTROLBackup.backupRdy 	= false;
@@ -115,6 +116,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_initPower(void)
     DL_SPI_reset(SPI_1_INST);
 
 
+
     DL_GPIO_enablePower(GPIOA);
     DL_GPIO_enablePower(GPIOB);
     DL_TimerA_enablePower(BOOST_CONTROL_INST);
@@ -125,6 +127,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_initPower(void)
     DL_UART_Main_enablePower(MCU_UART_1_INST);
     DL_SPI_enablePower(SPI_0_INST);
     DL_SPI_enablePower(SPI_1_INST);
+
 
     delay_cycles(POWER_STARTUP_DELAY);
 }
@@ -701,4 +704,11 @@ SYSCONFIG_WEAK void SYSCFG_DL_DMA_init(void){
     SYSCFG_DL_DMA_CH0_init();
 }
 
+
+SYSCONFIG_WEAK void SYSCFG_DL_SYSTICK_init(void)
+{
+    /* Initialize the period to 62.50 ns */
+    DL_SYSTICK_init(2);
+    DL_SYSTICK_enableInterrupt();
+}
 

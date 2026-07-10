@@ -21,7 +21,8 @@ GEN_CMDS += \
 GEN_FILES += \
 ./device_linker.cmd \
 ./device.opt \
-./ti_msp_dl_config.c 
+./ti_msp_dl_config.c \
+C:/ti/mspm0_sdk_2_09_00_01/source/ti/devices/msp/m0p/startup_system_files/ticlang/startup_mspm0g350x_ticlang.c 
 
 C_DEPS += \
 ./BoardAPI.d \
@@ -67,7 +68,8 @@ C_DEPS__QUOTED += \
 GEN_FILES__QUOTED += \
 "device_linker.cmd" \
 "device.opt" \
-"ti_msp_dl_config.c" 
+"ti_msp_dl_config.c" \
+"C:\ti\mspm0_sdk_2_09_00_01\source\ti\devices\msp\m0p\startup_system_files\ticlang\startup_mspm0g350x_ticlang.c" 
 
 C_SRCS__QUOTED += \
 "../BoardAPI.c" \

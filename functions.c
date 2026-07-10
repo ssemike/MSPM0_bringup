@@ -1115,6 +1115,7 @@ void cmd_ltr(char *args) {
     char *tokens[3];
     int tokenCount = CLI_Tokenize(args, tokens, 3);
     extern volatile bool ltr_monitor_active;
+    extern volatile bool ltr_model_monitor_active;
 
     if (tokenCount == 0) {
         uart_printf("LTR-329ALS-01 CLI:\n"
@@ -1122,7 +1123,9 @@ void cmd_ltr(char *args) {
                     "  ltr read            - One-shot CH0, CH1 and Lux read\n"
                     "  ltr gain <val>      - Set gain: 1, 2, 4, 8, 48, 96\n"
                     "  ltr monitor         - 200ms live telemetry\n"
-                    "  ltr stop            - Stop monitor\n");
+                    "  ltr model_monitor   - 500ms live model predictions (EXPOSURE, GAIN, LUX)\n"
+                    "  ltr predict <lux>   - Predict exposure and gain for manual lux value\n"
+                    "  ltr stop            - Stop monitor / model monitor\n");
         return;
     }
 
@@ -1173,8 +1176,46 @@ void cmd_ltr(char *args) {
         ltr_monitor_active = true;
         uart_printf("LTR monitor started — type any command to stop\n");
     }
+    else if (strcmp(sub, "model_monitor") == 0) {
+        ltr_model_monitor_active = true;
+        uart_printf("EXPOSURE , GAIN, LUX\r\n");
+    }
+    else if (strcmp(sub, "predict") == 0) {
+        if (tokenCount < 2) {
+            uart_printf("Usage: ltr predict <lux>\n");
+            return;
+        }
+        float lux = (float)atof(tokens[1]);
+        
+        // Configure SysTick as a free-running down-counter
+        SysTick->CTRL = 0;           // Disable SysTick
+        SysTick->LOAD = 0x00FFFFFF;  // Max reload value
+        SysTick->VAL = 0;            // Reset current value
+        SysTick->CTRL = 0x00000005;  // CLKSOURCE=Processor clock (32MHz), ENABLE=1, TICKINT=0
+        
+        uint32_t start_cycles = SysTick->VAL;
+        
+        // Perform the inference calculations
+        double input[1];
+        input[0] = log1p((double)lux);
+        double exp_pred = score_exposure_sep(input);
+        double gain_pred = score_gain_sep(input);
+        
+        uint32_t end_cycles = SysTick->VAL;
+        
+        // Stop SysTick
+        SysTick->CTRL = 0;
+        
+        uint32_t elapsed_cycles = (start_cycles - end_cycles) & 0x00FFFFFF;
+        float elapsed_us = (float)elapsed_cycles / 32.0f; // 32 MHz clock -> 32 cycles per microsecond
+        
+        // Print the predicted results and the elapsed time
+        uart_printf("%ld, %ld, %ld\r\n", (int32_t)exp_pred, (int32_t)gain_pred, (int32_t)lux);
+        uart_printf("Inference time: %u cycles (~%.2f us)\r\n", elapsed_cycles, elapsed_us);
+    }
     else if (strcmp(sub, "stop") == 0) {
         ltr_monitor_active = false;
+        ltr_model_monitor_active = false;
         uart_printf("LTR monitor stopped\n");
     }
     else {
@@ -1311,7 +1352,9 @@ void cmd_imx(char *args) {
     if (tokenCount < 1) {
         uart_printf("IMX335 Camera Control CLI:\n"
                     "  imx scan             - Scan I2C1 for the camera\n"
-                    "  imx init             - Initialize the camera and start streaming\n"
+                    "  imx init             - Initialize the camera (standby mode)\n"
+                    "  imx start            - Start camera streaming\n"
+                    "  imx stop             - Stop camera streaming (standby)\n"
                     "  imx id               - Read camera sensor ID\n"
                     "  imx read <reg_hex>   - Read a 16-bit register (hex address)\n"
                     "  imx write <reg_hex> <val_hex> - Write a value to a 16-bit register\n"
@@ -1338,9 +1381,25 @@ void cmd_imx(char *args) {
             return;
         }
         if (IMX335_Init(I2C_1_INST)) {
-            uart_printf("IMX335 initialized successfully. Streaming started.\n");
+            uart_printf("IMX335 initialized successfully. Camera is in Standby.\n");
         } else {
             uart_printf("ERROR: IMX335 initialization failed\n");
+        }
+    }
+    else if (strcmp(sub, "start") == 0) {
+        uart_printf("Starting IMX335 streaming...\n");
+        if (IMX335_Start()) {
+            uart_printf("IMX335 streaming started successfully.\n");
+        } else {
+            uart_printf("ERROR: Failed to start IMX335 streaming\n");
+        }
+    }
+    else if (strcmp(sub, "stop") == 0) {
+        uart_printf("Stopping IMX335 streaming...\n");
+        if (IMX335_Stop()) {
+            uart_printf("IMX335 streaming stopped (sensor put to standby).\n");
+        } else {
+            uart_printf("ERROR: Failed to stop IMX335 streaming\n");
         }
     }
     else if (strcmp(sub, "id") == 0) {

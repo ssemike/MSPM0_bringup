@@ -316,6 +316,8 @@ extern "C" {
 #define DIGITAL_OUTPUT_PORTA_CHIP_S_FRAM_IOMUX                   (IOMUX_PINCM19)
 
 
+
+
 /* clang-format on */
 
 void SYSCFG_DL_init(void);
@@ -332,6 +334,7 @@ void SYSCFG_DL_SPI_0_init(void);
 void SYSCFG_DL_SPI_1_init(void);
 void SYSCFG_DL_DMA_init(void);
 
+void SYSCFG_DL_SYSTICK_init(void);
 
 bool SYSCFG_DL_saveConfiguration(void);
 bool SYSCFG_DL_restoreConfiguration(void);
